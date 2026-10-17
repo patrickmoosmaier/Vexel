@@ -28,8 +28,11 @@ Spielstände aus der vorherigen Version werden übernommen. Wer das Spiel dort s
 
 ## Inhalt
 
-- **1463 Vexel** in 300 Entwicklungslinien plus 8 legendäre Urcodes mit eigenen Entwicklungsstufen: **Bit → Byte → Kern → Champion → Ultra → Mega**.
+- **1472 Vexel** in 300 Entwicklungslinien plus 8 legendäre Urcodes mit eigenen Entwicklungsstufen: **Bit → Byte → Kern → Champion → Ultra → Mega**.
   Jede Linie hat 4 bis 6 Stufen und endet in einer Mega-Form.
+- **12 Starter-Linien** (Plasma, Hydro, Bio, Volt, Cyber, Kristall, Psi, Draco, Metall, Void, Aero, Kosmos): Dr. Brandt bietet
+  in jedem Spiel 3 zufällige an, immer mit verschiedenen Typen. Jeder Starter bekommt ab der Champion-Stufe einen zweiten Typ.
+  Rivale Kai nimmt sich einen der anderen – bevorzugt einen mit Typvorteil.
 - **Designs:** Ab Champion bekommen Vexel Rüstung und Waffen. Ultra- und Mega-Formen sind z. B. Ritter mit Schwert/Lanze und Schild,
   Schützen mit Armkanone oder Gatling, Kanonen-Bestien mit Rückenkanonen, Drachen mit Schulterkanonen, Engel mit Federflügeln
   und Heiligenschein, Dämonen mit Krallen und Fledermausflügeln, Titanen mit Raketenwerfern, Mech-Vögel und Insektenkrieger.
@@ -93,7 +96,7 @@ hinterlassen, dazu drei Vexel-Kerne und ein Geheimnis namens **Protokoll Null**,
 Voraussetzungen: [BlocksDS](https://blocksds.skylyrac.net) unter `/opt/wonderful`, Python 3 mit Pillow und NumPy.
 
 ```sh
-make assets   # erzeugt Grafiken, 1463 Vexel, Karten, Icon (tools/*.py -> source/gen_*.c)
+make assets   # erzeugt Grafiken, 1472 Vexel, Karten, Icon (tools/*.py -> source/gen_*.c)
 make          # baut VEXEL.nds
 make -f Makefile.pc   # PC-Testversion mit Skript-Eingabe und Screenshots (build/vexel_pc)
 ```

@@ -290,7 +290,7 @@ static const char *const house_texts[] = {
     "Mein Sohn arbeitet für Helix. Er kommt nie nach Hause. Er sagt, OMEGA braucht ihn rund um die Uhr.",
     "Wusstest du, dass Vexel träumen? Mein kleines Byte zuckt im Schlaf, als würde es Daten verarbeiten.",
     "Früher gab es Bäume aus Holz. Heute wachsen nur noch Bio-Vexel auf den Dächern. Auch schön, irgendwie.",
-    "Hast du schon alle 1463 Vexel gesehen? Mein Opa sagt, die letzten leben im Datenabgrund.",
+    "Hast du schon alle 1472 Vexel gesehen? Mein Opa sagt, die letzten leben im Datenabgrund.",
     "Ich repariere alte Kampfroboter. Die Vexel des Metall-Typs lieben es, in meiner Werkstatt zu schlafen.",
     "Lyra Voss? Die hat mir mal mein Haustier-Vexel gerettet. Eine gute Frau.",
     "Schhh! Mein Psi-Vexel meditiert. Wenn es aufwacht, schweben hier wieder alle Möbel.",
@@ -961,14 +961,13 @@ static int challenger_level(int c)
 
 static int challenger_team(int c, Mon *team)
 {
-    static const int starters[3] = { 0, 10, 20 };
     const ChallengerData *C = &challengers[c];
     int n = 3 + G.rematch[c] / 2;
     if (n > 6) n = 6;
     int ace = challenger_level(c);
     for (int i = 0; i < n; i++) {
         int line = C->lines[6 - n + i];
-        if (line == 0xFFFF) line = starters[(G.starter + 1) % 3];
+        if (line == 0xFFFF) line = rival_line();
         int lv = ace - (n - 1 - i) * 2;
         mon_create(&team[i], species_for_level(line, lv), lv);
     }
@@ -1456,7 +1455,12 @@ static void go_fishing(void)
     int n = lines_of_type(t, t, ls, 40);
     if (!n) return;
     int line;
-    do line = ls[rnd() % n]; while ((line == 0 || line == 10 || line == 20) && n > 3);   // starters only from Dr. Brandt
+    int is_st;
+    do {   // starters only from Dr. Brandt
+        line = ls[rnd() % n];
+        is_st = 0;
+        for (int k = 0; k < NUM_STARTERS; k++) if (starter_lines[k] == line) is_st = 1;
+    } while (is_st && n > NUM_STARTERS);
     int lv = 5 + badge_count() * 3 + rnd() % 5;
     if (flag(F_CHAMPION)) lv += 10;
     if (lv > 100) lv = 100;
@@ -1760,9 +1764,19 @@ static void give_key(int f, const char *who, const char *text)
 }
 
 // ------------------------------------------------------------------ scripts
+// Dr. Brandt offers three random starters (always three different types) from the pool of 12
+static int offer[3];
 static void choose_starter(void)
 {
-    static const int lines_[3] = { 0, 10, 20 };
+    for (int i = 0; i < 3; i++) {
+        int ok;
+        do {
+            offer[i] = rnd() % NUM_STARTERS;
+            ok = 1;
+            for (int j = 0; j < i; j++) if (mlines[starter_lines[offer[j]]].type == mlines[starter_lines[offer[i]]].type) ok = 0;
+        } while (!ok);
+    }
+    int lines_[3] = { starter_lines[offer[0]], starter_lines[offer[1]], starter_lines[offer[2]] };
     int cur = 0;
     for (;;) {
         draw_bottom_bg();
@@ -1775,7 +1789,10 @@ static void choose_starter(void)
             panel_solid(fb_bot, x, 28, 76, 112, i == cur ? lerp_col(col, C_BLACK, 10, 16) : RGB(2, 2, 6), i == cur ? C_WHITE : col);
             draw_mon(fb_bot, sp, x + 6, 34, 2, 0, 0);
             draw_text_sh(fb_bot, x + 38 - text_width(species[sp].name) / 2, 102, species[sp].name, C_WHITE, C_BLACK);
-            type_badge(fb_bot, x + 16, 116, species[sp].type1);
+            type_badge(fb_bot, x + 16, 112, species[sp].type1);
+            int later = mlines[lines_[i]].first + mlines[lines_[i]].nstages - 1;   // the final form has two types
+            draw_text(fb_bot, x + 7, 126, "+", C_TEXT2);
+            type_badge(fb_bot, x + 16, 125, species[later].type2);
         }
         int sp = mlines[lines_[cur]].first;
         panel_solid(fb_bot, 8, 146, 240, 42, RGB(2, 2, 6), C_CYAN);
@@ -1789,9 +1806,15 @@ static void choose_starter(void)
             for (int i = 0; i < 3; i++) if (touched(8 + i * 82, 28, 76, 112)) { if (cur == i) key_down |= K_A; cur = i; done = 1; }
             if (key_down & K_A) {
                 char buf[120];
-                fmt(buf, "%s – der %s-Vexel. Diesen Kern nehmen?", species[sp].name, type_names[species[sp].type1]);
+                int fin = mlines[lines_[cur]].first + mlines[lines_[cur]].nstages - 1;
+                fmt(buf, "%s – ein %s-Vexel, später auch %s. Diesen Kern nehmen?", species[sp].name, type_names[species[sp].type1], type_names[species[fin].type2]);
                 if (ask_yesno("Dr. Brandt", buf)) {
-                    G.starter = cur;
+                    G.starter = offer[cur];
+                    // Kai takes one of the other two – preferably one with a type advantage
+                    int o1 = offer[(cur + 1) % 3], o2 = offer[(cur + 2) % 3];
+                    int pt = mlines[lines_[cur]].type;
+                    int a1 = type_eff[mlines[starter_lines[o1]].type][pt], a2 = type_eff[mlines[starter_lines[o2]].type][pt];
+                    G.rival_starter = 1 + (a1 > a2 ? o1 : a2 > a1 ? o2 : ((rnd() & 1) ? o1 : o2));
                     Mon m;
                     mon_create(&m, sp, 5);
                     give_mon(&m);
@@ -1831,9 +1854,8 @@ static void script_lab(Npc *self)
         pdir = D_DOWN;
         redraw();
         say("Kai", "Ich bin Kai Kade. Mein Vater ist Viktor Kade – der Chef von Helix Dynamics.|Wenn hier Vexel verteilt werden, nehme ich auch einen. Das steht mir zu.");
-        static const int lines_[3] = { 0, 10, 20 };
         char buf[160];
-        int rl = lines_[(G.starter + 1) % 3];
+        int rl = rival_line();
         fmt(buf, "Kai schnappt sich %s!", species[mlines[rl].first].name);
         say(NULL, buf);
         say("Kai", "Und jetzt zeig mir, ob du mit deinem überhaupt umgehen kannst!");
@@ -1853,7 +1875,7 @@ static void script_lab(Npc *self)
         heal_party();
         sfx(SFX_LEVEL);
         say(NULL, "Du hast das VEXIKON, 5 Datenkapseln und 3 Reparaturkits erhalten!");
-        say("Dr. Brandt", "Das Vexikon katalogisiert alle 1463 bekannten Vexel. Mit Datenkapseln fängst du wilde Vexel im leuchtenden Datengras.|Der Kabelpfad nördlich vom Rost-Sektor führt zum Neon-Distrikt. Viel Glück!");
+        say("Dr. Brandt", "Das Vexikon katalogisiert alle 1472 bekannten Vexel. Mit Datenkapseln fängst du wilde Vexel im leuchtenden Datengras.|Der Kabelpfad nördlich vom Rost-Sektor führt zum Neon-Distrikt. Viel Glück!");
         bottom_need = 1;
         (void)self;
         return;
@@ -1904,7 +1926,7 @@ static void script_core(void)
         redraw();
         become_champion();
         save_game();
-        say(NULL, "Spiel automatisch gespeichert. Danke fürs Spielen!|Der Datenabgrund wurde freigeschaltet (Warp links im Kern). Fang alle 1463 Vexel!");
+        say(NULL, "Spiel automatisch gespeichert. Danke fürs Spielen!|Der Datenabgrund wurde freigeschaltet (Warp links im Kern). Fang alle 1472 Vexel!");
         return;
     }
 }

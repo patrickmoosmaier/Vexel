@@ -189,6 +189,13 @@ int badge_count(void)
     return n;
 }
 
+// Kai's starter line. Old saves (before random starters) used the classic rule: the next of the three.
+int rival_line(void)
+{
+    if (G.rival_starter && G.rival_starter <= NUM_STARTERS) return starter_lines[G.rival_starter - 1];
+    return starter_lines[(G.starter + 1) % 3];
+}
+
 // Opponent levels grow with the number of badges so every area stays challenging.
 int scaled_level(int base, int idx, int boss)
 {

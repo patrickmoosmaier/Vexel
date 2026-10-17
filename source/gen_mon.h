@@ -4,7 +4,7 @@ typedef struct { const char *name; unsigned char type, power, acc, phys, effect,
 typedef struct { const char *name; const char *dex; unsigned char base[5]; unsigned char type1, type2; unsigned short line; unsigned char stage, evo, catchrate; unsigned short exp; unsigned short height, weight; unsigned char tier, ability, attr; } SpeciesData;
 typedef struct { unsigned short first; unsigned char nstages; unsigned short learn_ofs; unsigned char learn_n; unsigned char type; } LineData;
 typedef struct { const char *name; const char *desc; unsigned char kind, param; } AbilityData;
-#define NUM_SPECIES 1463
+#define NUM_SPECIES 1472
 #define NUM_MOVES 591
 #define NUM_LINES 308
 #define NUM_TYPES 20
@@ -13,6 +13,7 @@ typedef struct { const char *name; const char *desc; unsigned char kind, param; 
 #define NUM_LEGENDS 8
 #define FIRST_LEGEND_SPECIES 965
 #define FIRST_LEGEND_LINE 200
+#define NUM_STARTERS 12
 #define IS_LEGEND_LINE(l) ((l) >= FIRST_LEGEND_LINE && (l) < FIRST_LEGEND_LINE + NUM_LEGENDS)
 extern const char *const type_names[NUM_TYPES];
 extern const char *const tier_names[6];
@@ -22,6 +23,7 @@ extern const AbilityData abilities[];
 extern const MoveData moves[];
 extern const SpeciesData species[];
 extern const LineData mlines[];
+extern const unsigned short starter_lines[];
 extern const unsigned short learn_data[][2];
 extern const int zone_count;
 extern const char *const zone_names[];

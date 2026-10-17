@@ -1416,11 +1416,10 @@ int battle_team(const char *name, int chr, Mon *team, int n, int money, int boss
 int battle_trainer(int tid)
 {
     const TrainerData *T = &trainers[tid];
-    static const int starters[3] = { 0, 10, 20 };
     Mon team[6];
     for (int i = 0; i < T->n; i++) {
         int line = T->team[i][0] >> 3;
-        if (line >= NUM_LINES) line = starters[(G.starter + 1) % 3];
+        if (line >= NUM_LINES) line = rival_line();
         int lv = scaled_level(T->team[i][1], i, T->boss);
         mon_create(&team[i], species_for_level(line, lv), lv);
     }

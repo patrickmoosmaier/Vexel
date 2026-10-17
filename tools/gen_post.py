@@ -172,7 +172,7 @@ TIDX = {n: i for i, n in enumerate(GM.TYPES)}
 
 
 def challenger_lines(c, t1, t2):
-    pool = [L for L in GM.lines if 'legend' not in L and L['idx'] not in (0, 10, 20) and L['t'] in (TIDX[t1], TIDX[t2])]
+    pool = [L for L in GM.lines if 'legend' not in L and L['idx'] not in GM.STARTER_POOL and L['t'] in (TIDX[t1], TIDX[t2])]
     pool.sort(key=lambda L: (-L['nst'], L['idx']))
     r = random.Random(500 + c)
     big = pool[:max(6, len(pool) // 2)]

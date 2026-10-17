@@ -57,7 +57,7 @@ void play_title(void)
             draw_text_big(fb, 128 - text_width("NEO-KYRA 2187") , 14, "NEO-KYRA 2187", C_CYAN, RGB(2, 2, 8), 2);
             button(fb, 48, 56, 160, 34, "NEUES SPIEL", C_MAGENTA, cur == 0);
             button(fb, 48, 98, 160, 34, has_save ? "FORTSETZEN" : "(kein Spielstand)", has_save ? C_CYAN : C_GREY, cur == 1);
-            draw_text(fb, 128 - text_width("1463 Vexel. 24 Arenen. 8 Urcodes.") / 2, 150, "1463 Vexel. 24 Arenen. 8 Urcodes.", C_TEXT2);
+            draw_text(fb, 128 - text_width("1472 Vexel. 24 Arenen. 8 Urcodes.") / 2, 150, "1463 Vexel. 24 Arenen. 8 Urcodes.", C_TEXT2);
             draw_text(fb, 128 - text_width("Ein unabhängiges Homebrew-Spiel") / 2, 172, "Ein unabhängiges Homebrew-Spiel", RGB(10, 12, 18));
             bot_dirty = 1;
         }
@@ -140,7 +140,7 @@ void play_ending(void)
     static const char *const credits[] = {
         "VEXEL – PROTOKOLL NULL", "", "Die Vexel sind frei.", "Helix Dynamics wurde aufgelöst.", "Kai Kade baut die Stadt neu auf.",
         "Lyra Voss forscht wieder – diesmal mit dir.", "", "~ ENDE ~", "", "Danke fürs Spielen!", "", "Aber das Abenteuer geht weiter:",
-        "Im Datenabgrund warten die stärksten Vexel.", "Und als Champion beginnt die Jagd nach den Urcodes...", "Kannst du alle 1463 fangen?", "",
+        "Im Datenabgrund warten die stärksten Vexel.", "Und als Champion beginnt die Jagd nach den Urcodes...", "Kannst du alle 1472 fangen?", "",
     };
     int n = sizeof(credits) / sizeof(credits[0]);
     for (int t = 0; t < 1100; t++) {

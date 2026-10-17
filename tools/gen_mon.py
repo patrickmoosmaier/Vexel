@@ -306,12 +306,15 @@ STARTERS = {0: (PL, "dragon", ["Glimmbit", "Glimmbyte", "Glutron", "Pyrorax", "S
             20: (BI, "knight", ["Sprossbit", "Sprossbyte", "Rankentron", "Sylvarax", "Floranth", "Gaiaprime"])}
 for v in STARTERS.values():
     names_used.update(v[2])
+# all lines Dr. Brandt can offer (3 random ones per game): the classic three plus the first v6 line of nine more types.
+# v6 lines start at 208 (200 regular + 8 legends) with 5 lines per type.
+STARTER_POOL = [0, 10, 20] + [208 + t * 5 for t in (VO, CY, KR, PS, DR, ME, VD, AE, KO)]
 TOTALS = [165, 235, 315, 415, 515, 615]
 CATCH = [220, 200, 160, 90, 35, 8]
 def make_line(li, t, i, root):
     rs = random.Random(1000 + li)
     nst = [4, 4, 4, 4, 5, 5, 5, 5, 6, 6][(i * 7 + t * 3) % 10]
-    if li in STARTERS:
+    if li in STARTERS or li in STARTER_POOL:
         nst = 6
     if i >= 10 and nst == 4 and (t * 5 + i) % 4 == 0:   # v6 lines: a few get an extra stage
         nst = 5
@@ -319,6 +322,10 @@ def make_line(li, t, i, root):
     mid = rs.choice(MID)
     t2 = rs.choice(SECOND[t]) if rs.random() < 0.6 else -1
     t2tier = rs.choice([3, 4])
+    if li in STARTER_POOL:   # starters always gain a second type at the Champion stage
+        if t2 < 0 or t2 == t:
+            t2 = SECOND[t][li % 5]
+        t2tier = 3
     final = rs.choice(FINALS[t])
     if li in STARTERS:
         final = STARTERS[li][1]
@@ -515,7 +522,7 @@ ZONES = [  # name, type prefs, base level min, max   (runtime adds badges*2)
     ("Dschungelpfad", [BI, BE, NA, DR], 7, 11),
 ]
 zr = random.Random(99)
-pool = [L for L in lines if L['idx'] not in STARTERS and 'legend' not in L]
+pool = [L for L in lines if L['idx'] not in STARTER_POOL and 'legend' not in L]
 zr.shuffle(pool)
 zone_lines = [[] for _ in ZONES]
 for L in pool:
@@ -533,7 +540,7 @@ enc = []
 for zi, (zn, prefs, a, b) in enumerate(ZONES):
     lst = [(lines[li]['first'], a, b, 10) for li in zone_lines[zi]]
     if zi == 6:
-        for li in STARTERS:
+        for li in STARTER_POOL:
             lst.append((lines[li]['first'], a, b, 1))
     enc.append(lst)
 
@@ -730,6 +737,7 @@ if __name__ == "__main__":
                 sp['line'], sp['stage'], sp['evo'], sp['catch'], sp['exp'], int(sp['height'] * 10), int(sp['weight'] * 10),
                 sp['tier'], sp['abil'], sp['attr']))
         f.write("};\n")
+        f.write("const unsigned short starter_lines[NUM_STARTERS] = {%s};\n" % ",".join(str(x) for x in STARTER_POOL))
         f.write("const LineData mlines[%d] = {\n" % len(lines))
         allls = []
         for L in lines:
@@ -771,7 +779,7 @@ typedef struct { const char *name; const char *desc; unsigned char kind, param; 
 #define NUM_LINES %d
 #define NUM_TYPES %d
 #define NUM_ABILITIES %d
-#define NO_MOVE 0xFFFF\n#define NUM_LEGENDS %d\n#define FIRST_LEGEND_SPECIES %d\n#define FIRST_LEGEND_LINE %d\n#define IS_LEGEND_LINE(l) ((l) >= FIRST_LEGEND_LINE && (l) < FIRST_LEGEND_LINE + NUM_LEGENDS)
+#define NO_MOVE 0xFFFF\n#define NUM_LEGENDS %d\n#define FIRST_LEGEND_SPECIES %d\n#define FIRST_LEGEND_LINE %d\n#define NUM_STARTERS %d\n#define IS_LEGEND_LINE(l) ((l) >= FIRST_LEGEND_LINE && (l) < FIRST_LEGEND_LINE + NUM_LEGENDS)
 extern const char *const type_names[NUM_TYPES];
 extern const char *const tier_names[6];
 extern const char *const attr_names[4];
@@ -780,6 +788,7 @@ extern const AbilityData abilities[];
 extern const MoveData moves[];
 extern const SpeciesData species[];
 extern const LineData mlines[];
+extern const unsigned short starter_lines[];
 extern const unsigned short learn_data[][2];
 extern const int zone_count;
 extern const char *const zone_names[];
@@ -792,7 +801,7 @@ enum { T_PLASMA, T_HYDRO, T_BIO, T_VOLT, T_CYBER, T_KRISTALL, T_NANO, T_GRAVO, T
        T_DRACO, T_SAKRAL, T_DAEMON, T_BESTIE, T_AERO, T_ARSENAL, T_VIRUS, T_KOSMOS };
 enum { %s, NUM_EFFECTS };
 enum { %s };
-""" % (len(species), len(moves), len(lines), NT, len(ABIL), len(LEGENDS), lines[FIRST_LEGEND_LINE]['first'], FIRST_LEGEND_LINE,
+""" % (len(species), len(moves), len(lines), NT, len(ABIL), len(LEGENDS), lines[FIRST_LEGEND_LINE]['first'], FIRST_LEGEND_LINE, len(STARTER_POOL),
        ", ".join("E_" + EFF_C.get(e, e.upper()) for e in EFFECTS), ", ".join("AB_" + k.upper() for k in ABIL_KINDS)))
 
     print("species", len(species), "moves", len(moves), "lines", len(lines), "abilities", len(ABIL))

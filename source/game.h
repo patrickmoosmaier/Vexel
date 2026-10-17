@@ -72,7 +72,8 @@ typedef struct {
     u8 seen[128];
     u8 caught[128];
     u8 cur_gym;
-    u8 pad2[3];
+    u8 rival_starter;   // 1 + index into starter_lines (0 = old save: classic rule)
+    u8 pad2[2];
     u16 items[ITEM_SLOTS];
     Mon party[PARTY_MAX];
     Mon box[BOX_MAX];
@@ -222,6 +223,7 @@ extern const char *const phase_names[4];
 typedef struct { const char *name; u8 t1, t2, chr, map; const char *intro; const char *lose; } GymData;
 extern const GymData gyms[NUM_GYMS];
 int badge_count(void);
+int rival_line(void);
 int scaled_level(int base, int idx, int boss);
 int species_for_level(int line, int level);
 int battle_team(const char *name, int chr, Mon *team, int n, int money, int boss, int bg, int music);
