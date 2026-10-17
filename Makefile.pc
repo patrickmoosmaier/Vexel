@@ -1,0 +1,4 @@
+SRC := $(wildcard source/*.c)
+build/vexel_pc: $(SRC) $(wildcard source/*.h)
+	@mkdir -p build
+	gcc -O1 -g -Wall -Wno-unused-function -fsanitize=address,undefined -o $@ $(SRC)
