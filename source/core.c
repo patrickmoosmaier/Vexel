@@ -154,8 +154,8 @@ int flag(int f) { return (G.flags[f >> 3] >> (f & 7)) & 1; }
 void set_flag(int f) { G.flags[f >> 3] |= 1 << (f & 7); }
 void clr_flag(int f) { G.flags[f >> 3] &= ~(1 << (f & 7)); }
 // Vexikon bits: species 0..1023 in seen/caught, the rest in seen_hi/caught_hi
-static u8 *seen_byte(int sp) { return sp < 1024 ? &G.seen[sp >> 3] : &G.seen_hi[(sp - 1024) >> 3]; }
-static u8 *caught_byte(int sp) { return sp < 1024 ? &G.caught[sp >> 3] : &G.caught_hi[(sp - 1024) >> 3]; }
+static u8 *seen_byte(int sp) { return sp < 1024 ? &G.seen[sp >> 3] : sp < 1536 ? &G.seen_hi[(sp - 1024) >> 3] : &G.seen_x[(sp - 1536) >> 3]; }
+static u8 *caught_byte(int sp) { return sp < 1024 ? &G.caught[sp >> 3] : sp < 1536 ? &G.caught_hi[(sp - 1024) >> 3] : &G.caught_x[(sp - 1536) >> 3]; }
 void mark_seen(int sp) { *seen_byte(sp) |= 1 << (sp & 7); }
 void mark_caught(int sp) { mark_seen(sp); *caught_byte(sp) |= 1 << (sp & 7); }
 int is_seen(int sp) { return (*seen_byte(sp) >> (sp & 7)) & 1; }
@@ -190,6 +190,20 @@ int badge_count(void)
 }
 
 // Kai's starter line. Old saves (before random starters) used the classic rule: the next of the three.
+// alternative evolution conditions (see tools/gen_mon.py ALT_COND_NAMES)
+const char *const alt_cond_names[5] = { "", "nachts", "wenn Angriff > Technik", "tagsüber", "bei Code-Mutation" };
+int alt_cond_met(const Mon *m, int cond)
+{
+    int ph = day_phase();
+    switch (cond) {
+    case 1: return ph == DAY_NIGHT;
+    case 2: return m->atk > m->tec;
+    case 3: return ph == DAY_MORNING || ph == DAY_DAY;
+    case 4: return ((m->iv[0] + m->iv[1] + m->iv[2] + m->iv[3] + m->iv[4]) & 1) != 0;
+    }
+    return 0;
+}
+
 int rival_line(void)
 {
     if (G.rival_starter && G.rival_starter <= NUM_STARTERS) return starter_lines[G.rival_starter - 1];
@@ -315,7 +329,7 @@ static u32 checksum(const SaveData *s)
 int save_game(void)
 {
     G.magic = SAVE_MAGIC;
-    G.version = 4;
+    G.version = 5;
     G.checksum = checksum(&G);
     return plat_save_write(&G, sizeof(G));
 }
@@ -354,7 +368,13 @@ static int detect_save(void)
 {
     plat_save_read(tmp.raw, sizeof(tmp.raw));
     if (tmp.n.magic != SAVE_MAGIC) return 0;
-    if (tmp.n.version == 4 && tmp.n.checksum == checksum(&tmp.n)) return 4;
+    if (tmp.n.version == 5 && tmp.n.checksum == checksum(&tmp.n)) return 5;
+    if (tmp.n.version == 4) {   // v6 layout: ended right before seen_x
+        unsigned at = (offsetof(SaveData, seen_x) + 3) & ~3u;
+        u32 stored;
+        memcpy(&stored, tmp.raw + at, 4);
+        if (stored == fnv(tmp.raw, at)) return 4;
+    }
     if (tmp.n.version == 3) {   // v5 layout: ended right before seen_hi (checksum 4-byte aligned)
         unsigned at = (offsetof(SaveData, seen_hi) + 3) & ~3u;
         u32 stored;
@@ -378,6 +398,7 @@ int load_game(void)
     if (!v) return 0;
     if (v >= 3) {
         if (v == 3) memset(tmp.raw + offsetof(SaveData, seen_hi), 0, sizeof(SaveData) - offsetof(SaveData, seen_hi));
+        if (v == 4) memset(tmp.raw + offsetof(SaveData, seen_x), 0, sizeof(SaveData) - offsetof(SaveData, seen_x));
         memcpy(&G, &tmp.n, sizeof(G));
         return 1;
     }

@@ -230,6 +230,7 @@ static const NpcDef n_CHAMPHALL[] = {
     { 7, 1, 0, 0, NK_SCRIPT, S_THRONE, NOF, NOF, NULL, NULL },
     { 12, 3, 0, 0, NK_SCRIPT, S_RANKING, NOF, NOF, NULL, NULL },
     { 2, 2, CH_NURSEBOT, D_DOWN, NK_SCRIPT, S_HALL_NURSE, NOF, NOF, "NURSE-0", NULL },
+    { 2, 8, CH_SCIENTIST, D_RIGHT, NK_SCRIPT, S_MYTHS, NOF, NOF, "Archivarin", NULL },
     { 9, 2, CH_SCIENTIST, D_DOWN, NK_TALK, 0, NOF, NOF, "Hallensprecherin", "Willkommen in deiner Halle, Champion! Am Thron kannst du deinen Titel verteidigen: drei Herausforderer hintereinander, ohne Heilung.|Am Terminal rechts siehst du die Rangliste deiner Herausforderer." }
 };
 static const Warp w_AETHERBERG[] = {

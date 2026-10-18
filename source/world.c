@@ -4,6 +4,7 @@
 #include "gen_maps.h"
 #ifndef __NDS__
 #include <stdio.h>
+#include <stdlib.h>
 #define LOG(...) fprintf(stderr, __VA_ARGS__)
 #else
 #define LOG(...)
@@ -30,7 +31,7 @@ extern const int num_trainers;
 // scripts
 enum { S_NONE, S_HOME_PC, S_LAB_BRANDT, S_ROST_BLOCK, S_HOME_BLOCK, S_NEON_GUARD, S_CANAL_GUARD, S_AQ_GUARD, S_KH_GUARD, S_S0_GUARD,
        S_LOBBY_BOT, S_KAI_HELP, S_CORE, S_ABYSS_SIGN, S_HOUSE, S_ARENA_LOCK, S_FIRST_HOME,
-       S_THRONE, S_RANKING, S_HALL_NURSE, S_AETHER_GUARD, S_HERMIT, S_PENSION, S_GIFT_BIKE, S_GIFT_ROD, S_RELEARN, S_HELDSHOP };
+       S_THRONE, S_RANKING, S_HALL_NURSE, S_AETHER_GUARD, S_HERMIT, S_PENSION, S_GIFT_BIKE, S_GIFT_ROD, S_RELEARN, S_HELDSHOP, S_MYTHS };
 
 typedef struct { const char *name; u8 chr, t1, t2; u16 lines[6]; const char *intro, *lose; } ChallengerData;   // line 0xFFFF = rival starter
 #include "gen_world.inc"
@@ -290,7 +291,7 @@ static const char *const house_texts[] = {
     "Mein Sohn arbeitet für Helix. Er kommt nie nach Hause. Er sagt, OMEGA braucht ihn rund um die Uhr.",
     "Wusstest du, dass Vexel träumen? Mein kleines Byte zuckt im Schlaf, als würde es Daten verarbeiten.",
     "Früher gab es Bäume aus Holz. Heute wachsen nur noch Bio-Vexel auf den Dächern. Auch schön, irgendwie.",
-    "Hast du schon alle 1472 Vexel gesehen? Mein Opa sagt, die letzten leben im Datenabgrund.",
+    "Hast du schon alle 1669 Vexel gesehen? Mein Opa sagt, die letzten leben im Datenabgrund.",
     "Ich repariere alte Kampfroboter. Die Vexel des Metall-Typs lieben es, in meiner Werkstatt zu schlafen.",
     "Lyra Voss? Die hat mir mal mein Haustier-Vexel gerettet. Eine gute Frau.",
     "Schhh! Mein Psi-Vexel meditiert. Wenn es aufwacht, schweben hier wieder alle Möbel.",
@@ -314,6 +315,7 @@ static int follower_species(void);
 static int light_phase = -1;
 static int face_toward(int fx, int fy, int tx_, int ty_);
 static void give_key(int f, const char *who, const char *text);
+static void script_myths(void);
 static u8 tiles[64 * 64];
 static int mw, mh;
 int cur_map = 0;
@@ -809,7 +811,7 @@ static int lines_of_type(int t1, int t2, int *out, int maxn)
 {
     int n = 0;
     for (int l = 0; l < NUM_LINES && n < maxn; l++)
-        if (!IS_LEGEND_LINE(l) && (mlines[l].type == t1 || (t2 != t1 && mlines[l].type == t2))) out[n++] = l;
+        if (!IS_SPECIAL_LINE(l) && (mlines[l].type == t1 || (t2 != t1 && mlines[l].type == t2))) out[n++] = l;
     return n;
 }
 
@@ -1503,7 +1505,7 @@ static int pension_compat(void)   // 0 none, 1 low, 2 high
 {
     if (G.pension_n < 2) return 0;
     const SpeciesData *a = &species[G.pension[0].species], *b = &species[G.pension[1].species];
-    if (IS_LEGEND_LINE(a->line) || IS_LEGEND_LINE(b->line)) return 0;
+    if (IS_SPECIAL_LINE(a->line) || IS_SPECIAL_LINE(b->line)) return 0;
     if (a->line == b->line) return 2;
     if (a->type1 == b->type1 || a->type1 == b->type2 || a->type2 == b->type1) return 1;
     return 0;
@@ -1875,7 +1877,7 @@ static void script_lab(Npc *self)
         heal_party();
         sfx(SFX_LEVEL);
         say(NULL, "Du hast das VEXIKON, 5 Datenkapseln und 3 Reparaturkits erhalten!");
-        say("Dr. Brandt", "Das Vexikon katalogisiert alle 1472 bekannten Vexel. Mit Datenkapseln fängst du wilde Vexel im leuchtenden Datengras.|Der Kabelpfad nördlich vom Rost-Sektor führt zum Neon-Distrikt. Viel Glück!");
+        say("Dr. Brandt", "Das Vexikon katalogisiert alle 1669 bekannten Vexel. Mit Datenkapseln fängst du wilde Vexel im leuchtenden Datengras.|Der Kabelpfad nördlich vom Rost-Sektor führt zum Neon-Distrikt. Viel Glück!");
         bottom_need = 1;
         (void)self;
         return;
@@ -1926,7 +1928,7 @@ static void script_core(void)
         redraw();
         become_champion();
         save_game();
-        say(NULL, "Spiel automatisch gespeichert. Danke fürs Spielen!|Der Datenabgrund wurde freigeschaltet (Warp links im Kern). Fang alle 1472 Vexel!");
+        say(NULL, "Spiel automatisch gespeichert. Danke fürs Spielen!|Der Datenabgrund wurde freigeschaltet (Warp links im Kern). Fang alle 1669 Vexel!");
         return;
     }
 }
@@ -1990,6 +1992,7 @@ static void run_script(int id, Npc *o)
         break;
     case S_PENSION: script_pension(); break;
     case S_RELEARN: script_relearn(); break;
+    case S_MYTHS: script_myths(); break;
     case S_HELDSHOP:
         say("Ausrüster", "Tragbare Items! Ein Vexel kann eines davon tragen – Beeren, Bänder, Orbs. Mit mehr Orden habe ich mehr im Angebot.");
         held_shop_menu();
@@ -2195,6 +2198,78 @@ static int check_warp(void)
     return 0;
 }
 
+// mystical Vexel: each lives on one map and only shows up at a certain time of day (-1 = any) after the champion title
+static const struct { u8 map; s8 phase; const char *hint; } myth_spots[NUM_MYTHICS] = {
+    { M_R_RAUM, DAY_NIGHT, "Ein Wesen, das die Zeit verbiegt, soll nachts auf der Raumhafenstraße gesehen worden sein." },
+    { M_CAVE, -1, "Tief in der Kristallhöhle glitzert ein Muster, das sich endlos wiederholt." },
+    { M_R_DSCHUNGEL, DAY_EVENING, "Abends verändert sich etwas im Dschungelpfad – als würde es sich selbst umschreiben." },
+    { M_R_SCHATTEN, DAY_NIGHT, "In der Schattengasse hallt nachts ein Echo, das niemand ausgelöst hat." },
+    { M_R_SCHROTT, DAY_DAY, "Am Schrottpass bricht tagsüber manchmal der Boden unter einem unsichtbaren Gewicht ein." },
+    { M_R_LAVA, DAY_MORNING, "Im Morgengrauen singt etwas über dem Lavafeld." },
+    { M_R_TIEFSEE, DAY_NIGHT, "Fischer erzählen von einem Jäger, der nachts am Tiefseesteg auftaucht." },
+    { M_R_HIMMEL, DAY_MORNING, "Morgens tanzt etwas in den Winden der Himmelstreppe." },
+    { M_HYDRO, DAY_NIGHT, "Nachts zersetzt etwas die Leitungen am Hydrokanal." },
+    { M_GLITCH, DAY_DAY, "In der Glitchwüste soll tagsüber ein Drache aus Drohnenschrott wandern." },
+    { M_R_DATA, DAY_EVENING, "Abends windet sich etwas durch die Leitungen der Datenautobahn." },
+    { M_NEON, DAY_NIGHT, "Im Neonpark erscheint nachts ein Ritter aus Licht." },
+    { M_ABYSS, -1, "Im Datenabgrund treibt ein Nebel, der wie zwei Sterne leuchtet." },
+    { M_KABEL, DAY_MORNING, "Am Kabelpfad wachsen über Nacht Wälder – und morgens sieht man, wer sie pflanzt." },
+    { M_KRISHAIN, DAY_EVENING, "Abends jagt im Eisfeld von Kristallhain etwas, das nie danebenschießt." },
+    { M_AETHERBERG, DAY_DAY, "Am Aetherberg erzeugt tagsüber etwas Stürme mit Rotorflügeln." },
+    { M_ORBIT, DAY_NIGHT, "Im Orbitalgarten soll nachts der Quellcode aller Vexel umherwandern." },
+};
+
+static void script_myths(void)
+{
+    say("Archivarin", "Ich sammle Gerüchte über mystische Vexel. Siebzehn soll es geben – und jedes zeigt sich nur an einem Ort, zu einer bestimmten Tageszeit.");
+    static char rows[NUM_MYTHICS][56];
+    const char *opts[NUM_MYTHICS];
+    for (;;) {
+        int found = 0;
+        for (int k = 0; k < NUM_MYTHICS; k++) {
+            int sp = FIRST_MYTHIC_SPECIES + k;
+            found += is_caught(sp);
+            fmt(rows[k], "%s%s – %s", is_caught(sp) ? "* " : "", is_seen(sp) ? species[sp].name : "???", maps[myth_spots[k].map].name);
+            opts[k] = rows[k];
+        }
+        char title[40];
+        fmt(title, "Mystisch: %d/17 gefangen", found);
+        int r = menu_list(title, opts, NUM_MYTHICS, 0);
+        if (r < 0) break;
+        char buf[220];
+        fmt(buf, "%s%s Aber nur, wer Champion ist, bekommt es zu sehen.", myth_spots[r].hint, myth_spots[r].phase < 0 ? " Zu jeder Tageszeit." : "");
+        say("Archivarin", buf);
+    }
+    bottom_need = 1;
+}
+
+static int try_myth(void)
+{
+    if (!flag(F_CHAMPION)) return 0;
+    for (int k = 0; k < NUM_MYTHICS; k++) {
+        if (myth_spots[k].map != cur_map || is_caught(FIRST_MYTHIC_SPECIES + k)) continue;
+        if (myth_spots[k].phase >= 0 && myth_spots[k].phase != day_phase()) continue;
+        int rate = 40;
+#ifndef __NDS__
+        if (getenv("VX_MYTH")) rate = 1;   // test switch
+#endif
+        if (rnd() % rate) return 0;
+        char buf[120];
+        for (int i = 0; i < 24; i++) { world_draw(); fill_blend(fb_top, 0, 0, SCR_W, SCR_H, (i & 4) ? C_MAGENTA : C_CYAN, (i & 2) ? 6 : 0); frame(); }
+        fmt(buf, "Die Luft flimmert... ein mystisches Wesen zeigt sich!");
+        say(NULL, buf);
+        int r = battle_wild_ex(FIRST_MYTHIC_SPECIES + k, 70, maps[cur_map].bg, MUS_FINAL);
+        music_play(maps[cur_map].music);
+        if (r == BR_LOSE) blackout();
+        else if (r == BR_CAUGHT) say(NULL, "Unglaublich – du hast einen mystischen Vexel gefangen!");
+        else say(NULL, "Das Wesen löst sich in Licht auf. Vielleicht zeigt es sich wieder...");
+        bottom_need = 1;
+        redraw();
+        return 1;
+    }
+    return 0;
+}
+
 static int try_encounter(void)
 {
     const MapDef *m = &maps[cur_map];
@@ -2205,6 +2280,7 @@ static int try_encounter(void)
     if (!enc && m->enc_any && (t == TL_ROCKFLOOR || t == TL_VOIDFLOOR)) { enc = 1; chance = 16; }
     if (!enc) return 0;
     if (rnd() % chance) return 0;
+    if (try_myth()) return 1;
     int zi = m->zone;
     int ofs = zone_enc[zi][0], n = zone_enc[zi][1];
     // at night Void, Dämon, Psi, Kosmos and Virus Vexel come out much more often

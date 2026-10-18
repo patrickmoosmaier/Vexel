@@ -28,7 +28,14 @@ Spielstände aus der vorherigen Version werden übernommen. Wer das Spiel dort s
 
 ## Inhalt
 
-- **1472 Vexel** in 300 Entwicklungslinien plus 8 legendäre Urcodes mit eigenen Entwicklungsstufen: **Bit → Byte → Kern → Champion → Ultra → Mega**.
+- **1669 Vexel**: 1472 in 300 Entwicklungslinien plus 8 legendäre Urcodes, 17 mystische Vexel und 180 Vexel auf alternativen
+  Entwicklungspfaden. Stufen: **Bit → Byte → Kern → Champion → Ultra → Mega**.
+- **Alternative Entwicklungen:** 30 % der Linien (90) können sich in den letzten zwei Stufen anders entwickeln –
+  nachts, tagsüber, wenn Angriff > Technik ist oder bei einer Code-Mutation. Das Vexikon und die Status-Seite zeigen, wie.
+- **17 mystische Vexel:** erscheinen nach dem Champion-Titel nur an einem bestimmten Ort zu einer bestimmten Tageszeit.
+  Die Archivarin in der Champion-Halle kennt Gerüchte über jedes.
+- **Vexikon als Nachschlagewerk:** Alle normalen Vexel sind von Anfang an mit Werten, Fähigkeit, Entwicklung, Fundorten und
+  Attacken einsehbar (Typfilter mit Y). Nur legendäre und mystische Vexel bleiben verborgen, bis du ihnen begegnest.
   Jede Linie hat 4 bis 6 Stufen und endet in einer Mega-Form.
 - **12 Starter-Linien** (Plasma, Hydro, Bio, Volt, Cyber, Kristall, Psi, Draco, Metall, Void, Aero, Kosmos): Dr. Brandt bietet
   in jedem Spiel 3 zufällige an, immer mit verschiedenen Typen. Jeder Starter bekommt ab der Champion-Stufe einen zweiten Typ.

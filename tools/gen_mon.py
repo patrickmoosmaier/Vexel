@@ -479,6 +479,89 @@ for t in range(NT):
     for i in range(10, 15):
         make_line(len(lines), t, i, NEW_PREFIX[t][i - 10])
 
+# v7: 17 mystical Vexel (single stage, hidden until met; appear rarely after the champion title)
+MYTHICS = [  # name, t1, t2, archetype, ability, dex
+    ("Chronyx", KO, PS, "knight", "Turbo", "Ein Fragment der Zeit selbst. Wer es sieht, verliert Minuten."),
+    ("Fraktalia", KR, SA, "angel", "Reinheit", "Besteht aus endlos wiederholten Kristallmustern."),
+    ("Morphex", NA, VI, "insectwarrior", "Selbstreparatur", "Schreibt seinen eigenen Code bei jedem Kampf neu."),
+    ("Echolon", VD, VO, "mechbird", "Erstschlag", "Ein Echo aus dem ersten Datenstrom der Welt."),
+    ("Gravion", GR, ME, "titan", "Bollwerk", "So schwer, dass das Licht um es herum sich krümmt."),
+    ("Pyrelle", PL, SA, "angel", "Glutsonne", "Ihr Gesang entzündet erloschene Reaktoren."),
+    ("Tidorax", HY, BE, "cannonbeast", "Regenmacher", "Jagt in der Tiefsee nach verlorenen Servern."),
+    ("Sylphira", AE, PS, "angel", "Sonnenflügel", "Tanzt auf den Datenwinden über den Türmen."),
+    ("Toxyra", TO, DA, "demon", "Lebensraub", "Ihr Atem zersetzt jede Firewall."),
+    ("Ferrakor", ME, DR, "dragon", "Panzerplatten", "Ein Drache aus geschmolzenen Kampfdrohnen."),
+    ("Bitwyrm", CY, DR, "serpentdragon", "Hochtechnik", "Windet sich durch jede Leitung von Neo-Kyra."),
+    ("Lumacor", SA, VO, "knight", "Waffenmeister", "Ein Ritter aus reinem Licht und Strom."),
+    ("Nebulith", KO, VD, "demon", "Einschüchterung", "Lebt im Nebel zwischen zwei Sternen."),
+    ("Rankora", BI, PS, "angel", "Sanitäter", "Lässt in einer Nacht ganze Wälder wachsen."),
+    ("Bestiax", BE, AR, "gunner", "Zieloptik", "Ein Jäger, der nie sein Ziel verfehlt."),
+    ("Zyklonis", AE, AR, "mechbird", "Turbo", "Erzeugt Stürme mit seinen Rotorflügeln."),
+    ("Omnicode", CY, KO, "titan", "Überladung", "Man sagt, es enthalte den Quellcode aller Vexel."),
+]
+FIRST_MYTHIC_LINE = len(lines)
+FIRST_MYTHIC_SPECIES = len(species)
+for k, (nm, t, t2, final, ab, dex) in enumerate(MYTHICS):
+    li = len(lines)
+    genes = dict(bw=1.05, bh=1.05, hr=1.05, limb=1.1, ears="crest", tail="multi", back="plates", eyes="glow", pattern="circuit",
+                 belly=True, mouth=False, helm="crest", cape=k % 2 == 0, wings=True, halo=k % 3 != 0, energy=True,
+                 weapon=WEAPON_OF[final][k % len(WEAPON_OF[final])], offhand="shield" if final in ("knight", "angel") else "cannon", legend=True)
+    L = dict(idx=li, t=t, t2=t2, t2tier=5, nst=1, first_tier=5, root=nm, first=len(species), final=final, base=final,
+             genes=genes, w=[0.2] * 5, evo_lv={}, attr=3, mythic=k)
+    lines.append(L)
+    names_used.add(nm)
+    species.append(dict(name=nm, line=li, stage=0, tier=5, types=(t, t2), stats=[130, 135, 125, 135, 130], catch=12, exp=240, evo=0,
+                        abil=abil_id[ab], attr=3, mythic=k, mdex=dex))
+
+# v7: alternative evolution paths for 30% of the regular lines. The last two stages can branch off under a
+# condition (1 night, 2 Angriff > Technik, 3 day, 4 code mutation = odd IV sum). Alt species are appended last.
+ALT_COND_NAMES = ["", "nachts", "wenn Angriff > Technik", "tagsüber", "bei einer Code-Mutation"]
+names_used.update({"Onion"})   # real word / foreign trademark list hit
+br = random.Random(8888)
+regular = [L for L in lines if 'legend' not in L and 'mythic' not in L and L['idx'] not in STARTER_POOL and L['nst'] >= 4]
+n_regular = len([L for L in lines if 'legend' not in L and 'mythic' not in L])
+alt_lines = sorted(br.sample(regular, int(round(n_regular * 0.3))), key=lambda L: L['idx'])
+for L in alt_lines:
+    rs = random.Random(20000 + L['idx'])
+    t = L['t']
+    choices_t2 = [x for x in SECOND[t] if x != L['t2']]
+    finals = [f for f in FINALS[t] if f != L['final']] or [f for f in GUNS if f != L['final']]
+    final = rs.choice(finals)
+    RL = dict(L)   # render line for the alternative branch: other archetype, colours and second type
+    RL['idx'] = 5000 + L['idx']
+    RL['final'] = final
+    RL['t2'] = rs.choice(choices_t2)
+    RL['t2tier'] = L['first_tier'] + L['nst'] - 2
+    g = dict(L['genes'])
+    g['weapon'] = rs.choice(WEAPON_OF[final])
+    g['cape'] = not g['cape']; g['wings'] = not g['wings']; g['halo'] = rs.random() < 0.4
+    g['eyes'] = rs.choice(["glow", "visor", "mono"])
+    RL['genes'] = g
+    cond = rs.choice([1, 2, 3, 4])
+    bstage = L['nst'] - 3          # this stage evolves either normally or into the branch
+    parent = species[L['first'] + bstage]
+    parent['alt_evo'] = len(species)
+    parent['alt_cond'] = cond
+    mid = rs.choice(MID)
+    for k in range(2):
+        st = L['nst'] - 2 + k
+        main = species[L['first'] + st]
+        tier = main['tier']
+        w = list(L['w'])
+        w[1], w[3] = w[3], w[1]    # physical and technical emphasis swapped
+        tot = TOTALS[tier] + rs.randint(-10, 10)
+        stats = [min(255, max(10, int(round(tot * x)))) for x in w]
+        stats[0] += 6
+        nm = mkname(L['root'], mid, tier, rs)
+        pool_ab = {"knight": ["Waffenmeister", "Bollwerk"], "gunner": ["Zieloptik", "Hochtechnik"], "titan": ["Panzerplatten", "Bollwerk"],
+                   "angel": ["Energieschild", "Reinheit"], "demon": ["Einschüchterung", "Lebensraub"], "dragon": ["Überladung", "Berserker"],
+                   "cannonbeast": ["Zieloptik", "Überladung"], "serpentdragon": ["Reinheit", "Selbstreparatur"],
+                   "mechbird": ["Turbo", "Erstschlag"], "insectwarrior": ["Erstschlag", "Waffenmeister"]}[final]
+        species.append(dict(name=nm, line=L['idx'], stage=st, tier=tier, types=(t, RL['t2']), stats=stats, catch=main['catch'],
+                            exp=main['exp'], evo=main['evo'], abil=abil_id[rs.choice(pool_ab)], attr=(main['attr'] + 1) % 3,
+                            rline=RL, alt=True))
+FIRST_ALT_SPECIES = FIRST_MYTHIC_SPECIES + len(MYTHICS)
+
 # v5: themed classic abilities for some lines (own random stream, all stages of a line share it)
 THEME_ABIL = {PL: ["Glutsonne", "Thermokern", "Wutpegel"], HY: ["Regenmacher", "Wellenreiter", "Wellenreiter"],
               BI: ["Sonnenflügel", "Frühaufsteher", "Sammler"], VO: ["Fokuskern", "Wellenreiter"],
@@ -489,7 +572,7 @@ THEME_ABIL = {PL: ["Glutsonne", "Thermokern", "Wutpegel"], HY: ["Regenmacher", "
               AE: ["Sonnenflügel", "Fokuskern"], AR: ["Fokuskern", "Glücksfaktor"], VI: ["Glitchaura", "Eigensinn"],
               KO: ["Glücksfaktor", "Eigensinn"]}
 ar = random.Random(7777)
-for L in [L for L in lines if 'legend' not in L]:
+for L in [L for L in lines if 'legend' not in L and 'mythic' not in L]:
     if ar.random() < 0.3:
         ab = abil_id[ar.choice(THEME_ABIL[L['t']])]
         for sp in species:
@@ -522,7 +605,7 @@ ZONES = [  # name, type prefs, base level min, max   (runtime adds badges*2)
     ("Dschungelpfad", [BI, BE, NA, DR], 7, 11),
 ]
 zr = random.Random(99)
-pool = [L for L in lines if L['idx'] not in STARTER_POOL and 'legend' not in L]
+pool = [L for L in lines if L['idx'] not in STARTER_POOL and 'legend' not in L and 'mythic' not in L]
 zr.shuffle(pool)
 zone_lines = [[] for _ in ZONES]
 for L in pool:
@@ -574,12 +657,17 @@ DEX_B = ["Gilt als scheu, aber neugierig.", "Wird schnell zutraulich.", "Verteid
 DEX_TIER = ["Ein frisch geschlüpfter Datenkern.", "Lernt gerade, sich zu bewegen.", None, None,
             "Seine Waffen sind voll einsatzbereit.", "Die höchste bekannte Evolutionsstufe."]
 for sp in species:
+    if 'mythic' in sp:
+        sp['dex'] = sp['mdex']
+        sp['height'] = 3.0 + sp['mythic'] * 0.3
+        sp['weight'] = 300.0 + sp['mythic'] * 41
+        continue
     if 'legend' in sp:
         sp['dex'] = LEGEND_DEX[sp['legend']]
         sp['height'] = 7.0 + sp['legend']
         sp['weight'] = 900.0 + sp['legend'] * 77
         continue
-    r = random.Random(sp['line'] * 31 + sp['stage'])
+    r = random.Random(sp['line'] * 31 + sp['stage'] + (7777 if sp.get('alt') else 0))
     a = r.choice(DEX_A[sp['types'][0]])
     b = DEX_TIER[sp['tier']] or DEX_B[(sp['line'] * 3 + sp['stage'] * 5) % len(DEX_B)]
     sp['dex'] = a + " " + b
@@ -677,7 +765,7 @@ if __name__ == "__main__":
             todo += list(range(L['first'], L['first'] + L['nst']))
     for i in todo:
         sp = species[i]
-        sprites[i], pals[i] = render(lines[sp['line']], sp['stage'], sp['tier'])
+        sprites[i], pals[i] = render(sp.get('rline') or lines[sp['line']], sp['stage'], sp['tier'])
 
     if PREVIEW:
         from PIL import Image
@@ -732,10 +820,10 @@ if __name__ == "__main__":
         f.write("const SpeciesData species[%d] = {\n" % len(species))
         for sp in species:
             st = sp['stats']
-            f.write("{%s,%s,{%d,%d,%d,%d,%d},%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d},\n" % (
+            f.write("{%s,%s,{%d,%d,%d,%d,%d},%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d},\n" % (
                 cstr(sp['name']), cstr(sp['dex']), st[0], st[1], st[2], st[3], st[4], sp['types'][0], sp['types'][1],
                 sp['line'], sp['stage'], sp['evo'], sp['catch'], sp['exp'], int(sp['height'] * 10), int(sp['weight'] * 10),
-                sp['tier'], sp['abil'], sp['attr']))
+                sp['tier'], sp['abil'], sp['attr'], sp.get('alt_evo', 0xFFFF), sp.get('alt_cond', 0)))
         f.write("};\n")
         f.write("const unsigned short starter_lines[NUM_STARTERS] = {%s};\n" % ",".join(str(x) for x in STARTER_POOL))
         f.write("const LineData mlines[%d] = {\n" % len(lines))
@@ -771,7 +859,7 @@ if __name__ == "__main__":
         f.write("""#pragma once
 // generated by tools/gen_mon.py
 typedef struct { const char *name; unsigned char type, power, acc, phys, effect, chance, pp; } MoveData;
-typedef struct { const char *name; const char *dex; unsigned char base[5]; unsigned char type1, type2; unsigned short line; unsigned char stage, evo, catchrate; unsigned short exp; unsigned short height, weight; unsigned char tier, ability, attr; } SpeciesData;
+typedef struct { const char *name; const char *dex; unsigned char base[5]; unsigned char type1, type2; unsigned short line; unsigned char stage, evo, catchrate; unsigned short exp; unsigned short height, weight; unsigned char tier, ability, attr; unsigned short alt_evo; unsigned char alt_cond; } SpeciesData;
 typedef struct { unsigned short first; unsigned char nstages; unsigned short learn_ofs; unsigned char learn_n; unsigned char type; } LineData;
 typedef struct { const char *name; const char *desc; unsigned char kind, param; } AbilityData;
 #define NUM_SPECIES %d
@@ -779,7 +867,7 @@ typedef struct { const char *name; const char *desc; unsigned char kind, param; 
 #define NUM_LINES %d
 #define NUM_TYPES %d
 #define NUM_ABILITIES %d
-#define NO_MOVE 0xFFFF\n#define NUM_LEGENDS %d\n#define FIRST_LEGEND_SPECIES %d\n#define FIRST_LEGEND_LINE %d\n#define NUM_STARTERS %d\n#define IS_LEGEND_LINE(l) ((l) >= FIRST_LEGEND_LINE && (l) < FIRST_LEGEND_LINE + NUM_LEGENDS)
+#define NO_MOVE 0xFFFF\n#define NUM_LEGENDS %d\n#define FIRST_LEGEND_SPECIES %d\n#define FIRST_LEGEND_LINE %d\n#define NUM_STARTERS %d\n#define NUM_MYTHICS %d\n#define FIRST_MYTHIC_LINE %d\n#define FIRST_MYTHIC_SPECIES %d\n#define FIRST_ALT_SPECIES %d\n#define IS_MYTHIC_LINE(l) ((l) >= FIRST_MYTHIC_LINE && (l) < FIRST_MYTHIC_LINE + NUM_MYTHICS)\n#define IS_SPECIAL_LINE(l) (IS_LEGEND_LINE(l) || IS_MYTHIC_LINE(l))\n#define IS_LEGEND_LINE(l) ((l) >= FIRST_LEGEND_LINE && (l) < FIRST_LEGEND_LINE + NUM_LEGENDS)
 extern const char *const type_names[NUM_TYPES];
 extern const char *const tier_names[6];
 extern const char *const attr_names[4];
@@ -801,7 +889,7 @@ enum { T_PLASMA, T_HYDRO, T_BIO, T_VOLT, T_CYBER, T_KRISTALL, T_NANO, T_GRAVO, T
        T_DRACO, T_SAKRAL, T_DAEMON, T_BESTIE, T_AERO, T_ARSENAL, T_VIRUS, T_KOSMOS };
 enum { %s, NUM_EFFECTS };
 enum { %s };
-""" % (len(species), len(moves), len(lines), NT, len(ABIL), len(LEGENDS), lines[FIRST_LEGEND_LINE]['first'], FIRST_LEGEND_LINE, len(STARTER_POOL),
+""" % (len(species), len(moves), len(lines), NT, len(ABIL), len(LEGENDS), lines[FIRST_LEGEND_LINE]['first'], FIRST_LEGEND_LINE, len(STARTER_POOL), len(MYTHICS), FIRST_MYTHIC_LINE, FIRST_MYTHIC_SPECIES, FIRST_ALT_SPECIES,
        ", ".join("E_" + EFF_C.get(e, e.upper()) for e in EFFECTS), ", ".join("AB_" + k.upper() for k in ABIL_KINDS)))
 
     print("species", len(species), "moves", len(moves), "lines", len(lines), "abilities", len(ABIL))

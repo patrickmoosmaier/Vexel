@@ -95,6 +95,9 @@ typedef struct {
     // v6: Vexikon bits for species 1024..1535
     u8 seen_hi[64];
     u8 caught_hi[64];
+    // v7: Vexikon bits for species 1536..2047
+    u8 seen_x[64];
+    u8 caught_x[64];
     u32 checksum;
 } SaveData;
 
@@ -224,6 +227,8 @@ typedef struct { const char *name; u8 t1, t2, chr, map; const char *intro; const
 extern const GymData gyms[NUM_GYMS];
 int badge_count(void);
 int rival_line(void);
+extern const char *const alt_cond_names[5];
+int alt_cond_met(const Mon *m, int cond);
 int scaled_level(int base, int idx, int boss);
 int species_for_level(int line, int level);
 int battle_team(const char *name, int chr, Mon *team, int n, int money, int boss, int bg, int music);

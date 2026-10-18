@@ -1473,6 +1473,7 @@ void evolve_scene(Mon *m, int ns)
     }
     sfx(SFX_LEVEL);
     fmt(buf, "Glückwunsch! %s hat sich zu %s entwickelt!", species[old].name, species[ns].name);
+    LOG("[evolve] %s -> %s\n", species[old].name, species[ns].name);
     draw_bottom_bg();
     panel(fb_bot, 6, 6, 244, 60, C_YELLOW);
     draw_text_wrap(fb_bot, 16, 18, 226, buf, C_TEXT, C_BLACK, -1, 12);
@@ -1504,7 +1505,8 @@ void check_evolutions(void)
         const SpeciesData *s = &species[m->species];
         if (s->evo && m->level >= s->evo && m->hp > 0 && m->held != HI_STASISKERN) {
             int ns = m->species + 1;
-            if (species[ns].line == s->line) evolve_scene(m, ns);
+            if (s->alt_evo != 0xFFFF && alt_cond_met(m, s->alt_cond)) ns = s->alt_evo;   // alternative path
+            if (ns < NUM_SPECIES && species[ns].line == s->line) evolve_scene(m, ns);
         }
     }
 }

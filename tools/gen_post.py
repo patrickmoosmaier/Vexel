@@ -93,6 +93,7 @@ NPCS["CHAMPHALL"] = [
     '{ 7, 1, 0, 0, NK_SCRIPT, S_THRONE, NOF, NOF, NULL, NULL }',
     '{ 12, 3, 0, 0, NK_SCRIPT, S_RANKING, NOF, NOF, NULL, NULL }',
     '{ 2, 2, CH_NURSEBOT, D_DOWN, NK_SCRIPT, S_HALL_NURSE, NOF, NOF, "NURSE-0", NULL }',
+    '{ 2, 8, CH_SCIENTIST, D_RIGHT, NK_SCRIPT, S_MYTHS, NOF, NOF, "Archivarin", NULL }',
     '{ 9, 2, CH_SCIENTIST, D_DOWN, NK_TALK, 0, NOF, NOF, "Hallensprecherin", %s }' % cq(
         "Willkommen in deiner Halle, Champion! Am Thron kannst du deinen Titel verteidigen: drei Herausforderer hintereinander, ohne Heilung.|Am Terminal rechts siehst du die Rangliste deiner Herausforderer."),
 ]
@@ -172,7 +173,7 @@ TIDX = {n: i for i, n in enumerate(GM.TYPES)}
 
 
 def challenger_lines(c, t1, t2):
-    pool = [L for L in GM.lines if 'legend' not in L and L['idx'] not in GM.STARTER_POOL and L['t'] in (TIDX[t1], TIDX[t2])]
+    pool = [L for L in GM.lines if 'legend' not in L and 'mythic' not in L and L['idx'] not in GM.STARTER_POOL and L['t'] in (TIDX[t1], TIDX[t2])]
     pool.sort(key=lambda L: (-L['nst'], L['idx']))
     r = random.Random(500 + c)
     big = pool[:max(6, len(pool) // 2)]

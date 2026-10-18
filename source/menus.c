@@ -84,7 +84,10 @@ void mon_summary(Mon *m)
                     draw_text(fb, x + 33, 140, buf, C_YELLOW);
                 }
             }
-            draw_text(fb, 10, 158, "Evolutionslinie (Level)", C_TEXT2);
+            int alt = -1;
+            for (int k = 0; k < L->nstages; k++) if (species[L->first + k].alt_evo != 0xFFFF) alt = L->first + k;
+            if (alt >= 0) { fmt(buf, "Alternativ: %s (%s)", species[species[alt].alt_evo].name, alt_cond_names[species[alt].alt_cond]); draw_text(fb, 10, 158, buf, C_YELLOW); }
+            else draw_text(fb, 10, 158, "Evolutionslinie (Level)", C_TEXT2);
         }
         button(fb, 4, 172, 122, 18, page ? "< Werte" : "Info >", C_CYAN, 0);
         button(fb, 130, 172, 122, 18, "Zurück (B)", C_GREY, 0);
@@ -299,33 +302,153 @@ int bag_menu(int in_battle)
     }
 }
 
+// ------------------------------------------------------------------ Vexikon (reference book)
+// Every normal Vexel can be looked up right away; legendary and mystical ones stay hidden until met.
+static int dex_hidden(int sp) { return IS_SPECIAL_LINE(species[sp].line) && !is_seen(sp); }
+
+static int dex_prev(int sp)   // species this one evolves from, -1 if none
+{
+    const SpeciesData *s = &species[sp];
+    if (IS_SPECIAL_LINE(s->line)) return -1;
+    for (int i = 0; i < NUM_SPECIES; i++) if (species[i].alt_evo == sp) return i;
+    if (sp > 0 && species[sp - 1].line == s->line && species[sp - 1].evo && sp != mlines[s->line].first) return sp - 1;
+    return -1;
+}
+
+static void dex_where(int sp, char *o)
+{
+    const SpeciesData *s = &species[sp];
+    int line = s->line;
+    *o = 0;
+    for (int k = 0; k < NUM_STARTERS; k++)
+        if (starter_lines[k] == line) { fmt(o, "Startpartner bei Dr. Brandt (zufällige Auswahl). Sehr selten im Datenabgrund."); return; }
+    if (IS_LEGEND_LINE(line)) { fmt(o, "Urcode – erscheint in der Legenden-Geschichte nach dem Champion-Titel."); return; }
+    if (IS_MYTHIC_LINE(line)) { fmt(o, "Mystisch – nur an einem Ort zu einer bestimmten Tageszeit. Die Archivarin in der Champion-Halle kennt Gerüchte."); return; }
+    if (sp >= FIRST_ALT_SPECIES) { int p = dex_prev(sp); if (p >= 0 && species[p].alt_evo == sp) { fmt(o, "Nur durch alternative Entwicklung."); return; } }
+    char *q = o;
+    fmt(q, "Wild: "); while (*q) q++;
+    int n = 0;
+    for (int z = 0; z < zone_count; z++) {
+        int ofs = zone_enc[z][0], cnt = zone_enc[z][1];
+        for (int i = 0; i < cnt; i++)
+            if (species[enc_data[ofs + i][0]].line == line && sp < FIRST_ALT_SPECIES) {
+                fmt(q, "%s%s", n++ ? ", " : "", zone_names[z]); while (*q) q++;
+                break;
+            }
+    }
+    if (!n) fmt(o, "Nicht wild anzutreffen – nur durch Entwicklung oder Eier aus der Pension.");
+    else if (s->stage > 0) fmt(q, " (je nach Level schon entwickelt)");
+}
+
+static void dex_page(int sp, int page)
+{
+    u16 *ft = fb_top;
+    const SpeciesData *s = &species[sp];
+    char buf[260];
+    gradient_v(ft, 0, 0, SCR_W, SCR_H, lerp_col(type_color(s->type1), C_BLACK, 12, 16), RGB(1, 1, 4));
+    for (int y = 0; y < SCR_H; y += 8) fill_blend(ft, 0, y, SCR_W, 1, C_CYAN, 2);
+    if (page == 0) {
+        draw_mon(ft, sp, 4, 20, 4, 0, 0);
+        panel_solid(ft, 136, 8, 116, 40, RGB(3, 3, 9), type_color(s->type1));
+        fmt(buf, "#%d  %s", sp + 1, is_caught(sp) ? "gefangen" : is_seen(sp) ? "gesehen" : "");
+        draw_text_sh(ft, 142, 12, buf, C_YELLOW, C_BLACK);
+        draw_text_sh(ft, 142, 24, s->name, C_WHITE, C_BLACK);
+        fmt(buf, "%s · %s", tier_names[s->tier], attr_names[s->attr]);
+        draw_text(ft, 142, 36, buf, C_TEXT2);
+        type_badge(ft, 140, 52, s->type1);
+        if (s->type2 != s->type1) type_badge(ft, 188, 52, s->type2);
+        fmt(buf, "%d.%d m  ·  %d.%d kg", s->height / 10, s->height % 10, s->weight / 10, s->weight % 10);
+        draw_text_sh(ft, 140, 66, buf, C_TEXT, C_BLACK);
+        static const char *const nm[5] = { "KP", "ANG", "VER", "TEC", "INI" };
+        int tot = 0;
+        for (int k = 0; k < 5; k++) {
+            tot += s->base[k];
+            draw_text(ft, 140, 80 + k * 10, nm[k], C_TEXT2);
+            fmt(buf, "%d", s->base[k]);
+            draw_text(ft, 160, 80 + k * 10, buf, C_WHITE);
+            fill(ft, 182, 82 + k * 10, s->base[k] * 66 / 255, 5, type_color(s->type1));
+        }
+        fmt(buf, "Summe %d", tot);
+        draw_text(ft, 140, 132, buf, C_YELLOW);
+        panel_solid(ft, 4, 146, 248, 42, RGB(2, 2, 6), C_CYAN);
+        draw_text_wrap(ft, 10, 150, 236, s->dex, C_TEXT, C_BLACK, -1, 11);
+    } else if (page == 1) {
+        draw_mon(ft, sp, 4, 4, 2, 0, 0);
+        draw_text_sh(ft, 74, 8, s->name, C_WHITE, C_BLACK);
+        fmt(buf, "%s: %s", abilities[s->ability].name, abilities[s->ability].desc);
+        draw_text_wrap(ft, 74, 22, 178, buf, C_YELLOW, C_BLACK, -1, 10);
+        // evolution
+        char *q = buf;
+        int p = dex_prev(sp);
+        *q = 0;
+        if (p >= 0) {
+            if (species[p].alt_evo == sp) fmt(q, "Entwickelt sich aus %s ab Lv %d, %s. ", species[p].name, species[p].evo, alt_cond_names[species[p].alt_cond]);
+            else fmt(q, "Entwickelt sich aus %s ab Lv %d. ", species[p].name, species[p].evo);
+            while (*q) q++;
+        }
+        if (s->evo) {
+            int nx = sp + 1;
+            if (s->alt_evo != 0xFFFF) fmt(q, "Wird ab Lv %d zu %s – oder %s zu %s.", s->evo, species[nx].name, alt_cond_names[s->alt_cond], species[s->alt_evo].name);
+            else fmt(q, "Wird ab Lv %d zu %s.", s->evo, species[nx].name);
+        } else if (!*buf) fmt(q, "Entwickelt sich nicht.");
+        else fmt(q, "Letzte Stufe.");
+        panel_solid(ft, 4, 70, 248, 56, RGB(2, 2, 6), C_MAGENTA);
+        draw_text(ft, 10, 72, "ENTWICKLUNG", C_MAGENTA);
+        draw_text_wrap(ft, 10, 84, 236, buf, C_TEXT, C_BLACK, -1, 11);
+        dex_where(sp, buf);
+        panel_solid(ft, 4, 130, 248, 58, RGB(2, 2, 6), C_CYAN);
+        draw_text(ft, 10, 132, "FUNDORT", C_CYAN);
+        draw_text_wrap(ft, 10, 144, 236, buf, C_TEXT, C_BLACK, -1, 11);
+    } else {
+        draw_text_sh(ft, 8, 4, "ATTACKEN (Level)", C_YELLOW, C_BLACK);
+        const LineData *L = &mlines[s->line];
+        for (int i = 0; i < L->learn_n && i < 32; i++) {
+            const u16 *e = learn_data[L->learn_ofs + i];
+            int x = 6 + (i / 16) * 126, y = 18 + (i % 16) * 11;
+            fmt(buf, "%d", e[0]);
+            draw_text(ft, x, y, buf, C_TEXT2);
+            fill(ft, x + 18, y + 2, 5, 6, type_color(moves[e[1]].type));
+            draw_text(ft, x + 26, y, moves[e[1]].name, C_TEXT);
+        }
+    }
+    static const char *const pages[3] = { "1/3 Info", "2/3 Herkunft", "3/3 Attacken" };
+    fill_blend(ft, 186, 0, 70, 11, C_BLACK, 10);
+    draw_text(ft, 190, 1, pages[page], C_TEXT2);
+    top_dirty = 1;
+}
+
 void dex_menu(void)
 {
-    int cur = 0;
+    static u16 list[NUM_SPECIES];
+    static int filter = -1, cur = 0;   // filter: -1 all, else type
     for (;;) {
+        int n = 0;
+        for (int sp = 0; sp < NUM_SPECIES; sp++)
+            if (filter < 0 || species[sp].type1 == filter || species[sp].type2 == filter) list[n++] = sp;
+        if (cur >= n) cur = n - 1;
+        if (cur < 0) cur = 0;
         u16 *fb = fb_bot;
         draw_bottom_bg();
         panel_solid(fb, 4, 4, 248, 18, RGB(3, 3, 9), C_MAGENTA);
         char buf[80];
-        fmt(buf, "VEXIKON   Gesehen %d   Gefangen %d / %d", count_seen(), count_caught(), NUM_SPECIES);
-        draw_text_sh(fb, 12, 8, buf, C_YELLOW, C_BLACK);
-        // grid 6x4 icons
+        fmt(buf, "VEXIKON  %s  %d Einträge  · gef. %d", filter < 0 ? "Alle" : type_names[filter], n, count_caught());
+        draw_text_sh(fb, 10, 8, buf, C_YELLOW, C_BLACK);
         int page0 = (cur / 24) * 24;
-        for (int i = 0; i < 24; i++) {
-            int sp = page0 + i;
-            if (sp >= NUM_SPECIES) break;
+        for (int i = 0; i < 24 && page0 + i < n; i++) {
+            int sp = list[page0 + i];
             int x = 4 + (i % 6) * 42, y = 26 + (i / 6) * 36;
-            u16 bc = sp == cur ? C_WHITE : (is_caught(sp) ? C_CYAN : RGB(6, 7, 12));
-            panel_solid(fb, x, y, 40, 34, sp == cur ? RGB(6, 8, 18) : RGB(2, 2, 6), bc);
-            if (is_seen(sp)) draw_mon(fb, sp, x + 4, y + 1, 1, 0, is_caught(sp) ? 0 : 2);
-            else draw_text(fb, x + 16, y + 12, "?", RGB(8, 8, 12));
+            u16 bc = page0 + i == cur ? C_WHITE : (is_caught(sp) ? C_CYAN : RGB(6, 7, 12));
+            panel_solid(fb, x, y, 40, 34, page0 + i == cur ? RGB(6, 8, 18) : RGB(2, 2, 6), bc);
+            if (dex_hidden(sp)) draw_text(fb, x + 16, y + 10, "?", RGB(10, 10, 16));
+            else draw_mon(fb, sp, x + 4, y + 1, 1, 0, 0);
             fmt(buf, "%d", sp + 1);
             draw_text(fb, x + 3, y + 24, buf, RGB(14, 16, 22));
             if (is_caught(sp)) draw_capsule_icon(fb, x + 30, y + 24, 0);
         }
         panel_solid(fb, 4, 172, 248, 18, RGB(2, 2, 6), C_CYAN);
-        if (is_seen(cur)) fmt(buf, "#%d %s  (L/R: Seite, A: Details)", cur + 1, species[cur].name);
-        else fmt(buf, "#%d ???  (L/R: Seite)", cur + 1);
+        int csp = list[cur];
+        if (dex_hidden(csp)) fmt(buf, "#%d ???  Y: Typfilter", csp + 1);
+        else fmt(buf, "#%d %s  A: Details  Y: Typfilter", csp + 1, species[csp].name);
         draw_text_sh(fb, 10, 176, buf, C_TEXT, C_BLACK);
         bot_dirty = 1;
         for (;;) {
@@ -337,47 +460,29 @@ void dex_menu(void)
             if (key_rep & K_DOWN) { cur += 6; moved = 1; }
             if (key_rep & K_L) { cur -= 24; moved = 1; }
             if (key_rep & K_R) { cur += 24; moved = 1; }
-            if (moved) { cur = (cur + NUM_SPECIES) % NUM_SPECIES; sfx(SFX_SELECT); break; }
+            if (moved) { cur = (cur + n * 24) % n; sfx(SFX_SELECT); break; }
+            if (key_down & K_Y) { filter = filter + 1 >= NUM_TYPES ? -1 : filter + 1; cur = 0; sfx(SFX_SELECT); break; }
             if (key_down & K_B) { sfx(SFX_CANCEL); return; }
             int pick = -1;
             if (key_down & K_A) pick = cur;
-            for (int i = 0; i < 24; i++) if (touched(4 + (i % 6) * 42, 26 + (i / 6) * 36, 40, 34)) pick = page0 + i;
-            if (touched(4, 172, 124, 18)) { cur = (cur + NUM_SPECIES - 24) % NUM_SPECIES; break; }
-            if (touched(128, 172, 124, 18)) { cur = (cur + 24) % NUM_SPECIES; break; }
-            if (pick >= 0 && pick < NUM_SPECIES) {
+            for (int i = 0; i < 24 && page0 + i < n; i++) if (touched(4 + (i % 6) * 42, 26 + (i / 6) * 36, 40, 34)) pick = page0 + i;
+            if (touched(4, 4, 248, 18)) { filter = filter + 1 >= NUM_TYPES ? -1 : filter + 1; cur = 0; sfx(SFX_SELECT); break; }
+            if (touched(4, 172, 124, 18)) { cur = (cur + n * 24 - 24) % n; break; }
+            if (touched(128, 172, 124, 18)) { cur = (cur + 24) % n; break; }
+            if (pick >= 0) {
                 if (pick != cur) { cur = pick; break; }
-                if (!is_seen(cur)) { sfx(SFX_BUMP); break; }
-                // details on top screen
+                int sp = list[cur];
+                if (dex_hidden(sp)) { sfx(SFX_BUMP); say(NULL, "Über dieses Wesen ist nichts bekannt. Du musst ihm erst begegnen."); break; }
                 sfx(SFX_CONFIRM);
                 top_snapshot();
-                u16 *ft = fb_top;
-                const SpeciesData *s = &species[cur];
-                gradient_v(ft, 0, 0, SCR_W, SCR_H, lerp_col(type_color(s->type1), C_BLACK, 12, 16), RGB(1, 1, 4));
-                for (int y = 0; y < SCR_H; y += 8) fill_blend(ft, 0, y, SCR_W, 1, C_CYAN, 2);
-                draw_mon(ft, cur, 4, 20, 4, 0, is_caught(cur) ? 0 : 2);
-                panel_solid(ft, 136, 8, 116, 40, RGB(3, 3, 9), type_color(s->type1));
-                fmt(buf, "#%d", cur + 1);
-                draw_text_sh(ft, 142, 12, buf, C_YELLOW, C_BLACK);
-                draw_text_sh(ft, 142, 24, s->name, C_WHITE, C_BLACK);
-                fmt(buf, "%s · %s", tier_names[s->tier], attr_names[s->attr]);
-                draw_text(ft, 142, 36, buf, C_TEXT2);
-                type_badge(ft, 140, 54, s->type1);
-                if (s->type2 != s->type1) type_badge(ft, 188, 54, s->type2);
-                fmt(buf, "Größe %d.%d m", s->height / 10, s->height % 10);
-                draw_text_sh(ft, 140, 72, buf, C_TEXT, C_BLACK);
-                fmt(buf, "Gewicht %d.%d kg", s->weight / 10, s->weight % 10);
-                draw_text_sh(ft, 140, 84, buf, C_TEXT, C_BLACK);
-                if (is_caught(cur)) {
-                    const char *nm[5] = { "KP", "ANG", "VER", "TEC", "INI" };
-                    for (int k = 0; k < 5; k++) {
-                        draw_text(ft, 140, 100 + k * 9, nm[k], C_TEXT2);
-                        fill(ft, 164, 102 + k * 9, s->base[k] * 86 / 255, 4, type_color(s->type1));
-                    }
+                int page = 0;
+                dex_page(sp, page);
+                for (;;) {
+                    frame();
+                    if ((key_down & (K_A | K_RIGHT)) || touch_down) { page = (page + 1) % 3; dex_page(sp, page); sfx(SFX_SELECT); }
+                    else if (key_down & K_LEFT) { page = (page + 2) % 3; dex_page(sp, page); sfx(SFX_SELECT); }
+                    else if (key_down & K_B) break;
                 }
-                panel_solid(ft, 4, 150, 248, 38, RGB(2, 2, 6), C_CYAN);
-                draw_text_wrap(ft, 10, 155, 236, is_caught(cur) ? s->dex : "Fange diesen Vexel, um mehr Daten zu erhalten.", C_TEXT, C_BLACK, -1, 11);
-                top_dirty = 1;
-                wait_input_ab();
                 top_restore();
                 break;
             }
