@@ -951,10 +951,12 @@ static int choose_move(void)
             type_badge(fb_bot, x + 68, y + 39, moves[mv].type);
             if (moves[mv].power) {
                 fmt(buf, "Stärke %d", moves[mv].power);
-                int m4 = type_mult4(moves[mv].type, E.m->species);
+                int m4 = type_mult4(move_type(&moves[mv]), E.m->species);   // 4 = x1, dual types multiply
                 draw_text_sh(fb_bot, x + 8, y + 25, buf, C_TEXT2, C_BLACK);
-                if (m4 > 4) draw_text_sh(fb_bot, x + 70, y + 25, "Effektiv!", C_GREEN, C_BLACK);
-                else if (m4 < 4) draw_text_sh(fb_bot, x + 74, y + 25, "Schwach", RGB(28, 14, 14), C_BLACK);
+                if (m4 >= 16) draw_text_sh(fb_bot, x + 68, y + 25, "×4 stark!", C_GREEN, C_BLACK);
+                else if (m4 > 4) draw_text_sh(fb_bot, x + 68, y + 25, "×2 stark", C_GREEN, C_BLACK);
+                else if (m4 == 2) draw_text_sh(fb_bot, x + 68, y + 25, "×½ wenig", RGB(28, 14, 14), C_BLACK);
+                else if (m4 < 2) draw_text_sh(fb_bot, x + 68, y + 25, "×¼ wenig", RGB(28, 8, 8), C_BLACK);
             } else draw_text_sh(fb_bot, x + 8, y + 25, "Status", C_TEXT2, C_BLACK);
         }
         button(fb_bot, 8, 142, 240, 44, "ZURÜCK (B)", C_GREY, 0);

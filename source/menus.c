@@ -623,15 +623,97 @@ static void trainer_card(void)
     wait_input_ab();
 }
 
+
+// Typentabelle: 20x20 grid of attack type (rows) vs. defending type (columns)
+static void type_chart(void)
+{
+    static const char *const ab[NUM_TYPES] = { "PLA", "HYD", "BIO", "VOL", "CYB", "KRI", "NAN", "GRA", "PSI", "TOX",
+                                               "MET", "VOI", "DRA", "SAK", "DÄM", "BES", "AER", "ARS", "VIR", "KOS" };
+    const int x0 = 30, y0 = 12, cw = 11, ch = 9;
+    int ca = 0, cd = 0;
+    top_snapshot();
+    for (;;) {
+        u16 *fb = fb_bot;
+        fill(fb, 0, 0, SCR_W, SCR_H, RGB(2, 2, 6));
+        draw_text(fb, 1, 1, "Ang", C_TEXT2);
+        for (int d = 0; d < NUM_TYPES; d++) fill(fb, x0 + d * cw + 2, 2, cw - 4, 8, type_color(d));
+        for (int a = 0; a < NUM_TYPES; a++) {
+            int y = y0 + a * ch;
+            draw_text(fb, 2, y - 1, ab[a], a == ca ? C_WHITE : type_color(a));
+            for (int d = 0; d < NUM_TYPES; d++) {
+                int e = type_eff[a][d], x = x0 + d * cw;
+                u16 c = e > 2 ? RGB(4, 22, 8) : e < 2 ? RGB(22, 5, 5) : ((a == ca || d == cd) ? RGB(6, 7, 14) : RGB(4, 4, 9));
+                fill(fb, x, y, cw - 1, ch - 1, c);
+                if (e > 2) { fill(fb, x + 2, y + 3, 6, 2, C_WHITE); fill(fb, x + 4, y + 1, 2, 6, C_WHITE); }   // "+" marker
+                if (e < 2) fill(fb, x + 3, y + 3, 4, 2, RGB(31, 18, 18)); // "-" marker
+            }
+        }
+        // cursor
+        int cx = x0 + cd * cw, cy = y0 + ca * ch;
+        fill(fb, cx - 1, cy - 1, cw + 1, 1, C_WHITE); fill(fb, cx - 1, cy + ch - 1, cw + 1, 1, C_WHITE);
+        fill(fb, cx - 1, cy - 1, 1, ch + 1, C_WHITE); fill(fb, cx + cw - 1, cy - 1, 1, ch + 1, C_WHITE);
+        bot_dirty = 1;
+        // details on the top screen
+        u16 *ft = fb_top;
+        gradient_v(ft, 0, 0, SCR_W, SCR_H, RGB(4, 3, 12), RGB(1, 1, 4));
+        panel_solid(ft, 4, 4, 248, 40, RGB(3, 3, 10), C_MAGENTA);
+        type_badge(ft, 12, 10, ca);
+        draw_text_sh(ft, 64, 11, "greift an", C_TEXT2, C_BLACK);
+        type_badge(ft, 120, 10, cd);
+        int e = type_eff[ca][cd];
+        const char *res = e > 2 ? "×2  sehr effektiv!" : e < 2 ? "×½  nicht sehr effektiv" : "×1  normal";
+        draw_text_sh(ft, 12, 27, res, e > 2 ? C_GREEN : e < 2 ? RGB(31, 12, 12) : C_WHITE, C_BLACK);
+        char buf[300], *o;
+        // attacker summary
+        o = buf; fmt(o, "%s greift an – stark gegen: ", type_names[ca]); while (*o) o++;
+        int n = 0;
+        for (int d = 0; d < NUM_TYPES; d++) if (type_eff[ca][d] > 2) { fmt(o, "%s%s", n++ ? ", " : "", type_names[d]); while (*o) o++; }
+        if (!n) { fmt(o, "-"); while (*o) o++; }
+        fmt(o, ". Schwach gegen: "); while (*o) o++;
+        n = 0;
+        for (int d = 0; d < NUM_TYPES; d++) if (type_eff[ca][d] < 2) { fmt(o, "%s%s", n++ ? ", " : "", type_names[d]); while (*o) o++; }
+        if (!n) fmt(o, "-");
+        panel_solid(ft, 4, 48, 248, 66, RGB(2, 2, 6), type_color(ca));
+        draw_text_wrap(ft, 10, 52, 236, buf, C_TEXT, C_BLACK, -1, 11);
+        // defender summary
+        o = buf; fmt(o, "%s verteidigt – anfällig für: ", type_names[cd]); while (*o) o++;
+        n = 0;
+        for (int a = 0; a < NUM_TYPES; a++) if (type_eff[a][cd] > 2) { fmt(o, "%s%s", n++ ? ", " : "", type_names[a]); while (*o) o++; }
+        if (!n) { fmt(o, "-"); while (*o) o++; }
+        fmt(o, ". Resistent gegen: "); while (*o) o++;
+        n = 0;
+        for (int a = 0; a < NUM_TYPES; a++) if (type_eff[a][cd] < 2) { fmt(o, "%s%s", n++ ? ", " : "", type_names[a]); while (*o) o++; }
+        if (!n) fmt(o, "-");
+        panel_solid(ft, 4, 118, 248, 56, RGB(2, 2, 6), type_color(cd));
+        draw_text_wrap(ft, 10, 122, 236, buf, C_TEXT, C_BLACK, -1, 11);
+        draw_text(ft, 8, 179, "Zwei Typen: Faktoren multiplizieren sich.  B: Zurück", C_TEXT2);
+        top_dirty = 1;
+        for (;;) {
+            frame();
+            int moved = 0;
+            if (key_rep & K_LEFT) { cd = (cd + NUM_TYPES - 1) % NUM_TYPES; moved = 1; }
+            if (key_rep & K_RIGHT) { cd = (cd + 1) % NUM_TYPES; moved = 1; }
+            if (key_rep & K_UP) { ca = (ca + NUM_TYPES - 1) % NUM_TYPES; moved = 1; }
+            if (key_rep & K_DOWN) { ca = (ca + 1) % NUM_TYPES; moved = 1; }
+            if (touch_down && tx >= x0 && ty >= y0 && tx < x0 + NUM_TYPES * cw && ty < y0 + NUM_TYPES * ch) {
+                cd = (tx - x0) / cw; ca = (ty - y0) / ch; moved = 1;
+            }
+            if (moved) { sfx(SFX_SELECT); break; }
+            if (key_down & (K_B | K_A)) { sfx(SFX_CANCEL); top_restore(); return; }
+        }
+    }
+}
+
 void menu_main(void)
 {
     static int cur = 0;
     for (;;) {
-        static const char *const opts[] = { "VEXEL-TEAM", "TASCHE", "AUSRÜSTUNG", "VEXIKON", "TRAINERPASS", "SPEICHERN", "OPTIONEN", "ZURÜCK" };
+        static const char *const opts[] = { "VEXEL-TEAM", "TASCHE", "AUSRÜSTUNG", "VEXIKON", "TRAINERPASS", "SPEICHERN", "OPTIONEN", "TYPENTABELLE", "ZURÜCK" };
         draw_bottom_bg();
         bot_dirty = 1;
-        int r = menu_list("MENÜ", opts, 8, cur);
-        if (r < 0 || r == 7) return;
+        int r = menu_list("MENÜ", opts, 9, cur);
+        if (r < 0 || r == 8) return;
+        if (r == 7) { cur = r; type_chart(); continue; }
         cur = r;
         if (r == 0) party_menu(0, 0);
         else if (r == 1) bag_menu(0);

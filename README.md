@@ -84,6 +84,36 @@ Spielstände aus der vorherigen Version werden übernommen. Wer das Spiel dort s
   - Menü → **Ausrüstung** fasst alle Spezialgegenstände zusammen.
 - Synthwave-Chiptune-Soundtrack (12 Stücke) und Soundeffekte.
 
+## Typentabelle
+
+Jede Attacke hat einen Typ. Trifft sie einen Vexel, dessen Typ dagegen schwach ist, macht sie **doppelten Schaden (×2)**;
+ist er resistent, nur **halben Schaden (×½)**. Hat ein Vexel zwei Typen, werden beide Faktoren multipliziert – so sind
+**×4** und **×¼** möglich. Attacken vom eigenen Typ machen zusätzlich ×1,5 (Typ-Bonus). Im Spiel gibt es die Tabelle
+im Menü unter **TYPENTABELLE**, und bei der Attackenwahl steht direkt, wie effektiv eine Attacke gegen den Gegner ist.
+
+| Typ | Greift an: ×2 gegen | Greift an: ×½ gegen | Verteidigt: anfällig für (×2) | Verteidigt: resistent gegen (×½) |
+|---|---|---|---|---|
+| **Plasma** | Bio, Kristall, Nano, Metall, Bestie | Plasma, Hydro, Gravo, Draco | Hydro, Kristall, Gravo | Plasma, Bio, Nano, Metall |
+| **Hydro** | Plasma, Kristall, Gravo | Hydro, Bio, Draco | Bio, Volt | Plasma, Hydro, Kristall, Metall |
+| **Bio** | Hydro, Kristall, Gravo | Plasma, Bio, Nano, Toxin, Metall, Aero | Plasma, Nano, Toxin, Bestie, Aero | Hydro, Bio, Volt, Gravo |
+| **Volt** | Hydro, Cyber, Metall, Aero, Arsenal | Bio, Volt, Gravo | Kristall, Gravo | Volt, Metall, Aero |
+| **Cyber** | Psi, Metall, Virus | Kristall, Void | Volt, Nano, Toxin, Void, Virus | – |
+| **Kristall** | Plasma, Volt, Nano, Draco, Aero | Hydro, Gravo, Metall | Plasma, Hydro, Bio, Gravo, Metall, Arsenal | Cyber, Nano, Toxin, Aero |
+| **Nano** | Bio, Cyber, Psi | Plasma, Kristall, Metall | Plasma, Kristall, Bestie, Aero, Virus | Bio, Void |
+| **Gravo** | Plasma, Volt, Kristall, Metall, Arsenal | Bio, Psi, Aero | Hydro, Bio, Psi, Kosmos | Plasma, Volt, Kristall, Toxin, Bestie, Arsenal |
+| **Psi** | Gravo, Toxin, Bestie | Psi, Metall, Dämon | Cyber, Nano, Void, Dämon, Bestie, Kosmos | Gravo, Psi |
+| **Toxin** | Bio, Cyber, Bestie | Kristall, Gravo, Toxin, Metall, Sakral | Psi, Sakral | Bio, Toxin, Virus |
+| **Metall** | Kristall, Void, Sakral | Plasma, Hydro, Volt, Metall | Plasma, Volt, Cyber, Gravo, Arsenal | Bio, Kristall, Nano, Psi, Toxin, Metall, Draco, Sakral, Bestie, Aero |
+| **Void** | Cyber, Psi, Kosmos | Nano, Void, Sakral | Metall, Sakral | Cyber, Void, Dämon, Arsenal, Kosmos |
+| **Draco** | Draco, Bestie, Aero | Metall, Sakral | Kristall, Draco | Plasma, Hydro, Bestie, Kosmos |
+| **Sakral** | Toxin, Void, Dämon, Virus | Metall, Sakral, Arsenal, Kosmos | Metall, Dämon, Kosmos | Toxin, Void, Draco, Sakral, Arsenal, Virus |
+| **Dämon** | Psi, Sakral, Bestie | Void, Dämon, Kosmos | Sakral, Kosmos | Psi, Dämon |
+| **Bestie** | Bio, Nano, Psi | Gravo, Metall, Draco, Arsenal | Plasma, Psi, Toxin, Draco, Dämon, Aero, Arsenal | – |
+| **Aero** | Bio, Nano, Bestie | Volt, Kristall, Metall | Volt, Kristall, Draco, Arsenal | Bio, Gravo |
+| **Arsenal** | Kristall, Metall, Bestie, Aero | Gravo, Void, Sakral | Volt, Gravo, Virus | Sakral, Bestie |
+| **Virus** | Cyber, Nano, Arsenal | Toxin, Sakral, Virus | Cyber, Sakral | Virus |
+| **Kosmos** | Gravo, Psi, Sakral, Dämon | Void, Draco, Kosmos | Void | Sakral, Dämon, Kosmos |
+
 ## Story (spoilerarm)
 
 Neo-Kyra, 2187. Die Meere sind gestiegen, die Menschheit lebt auf Stelzen über dem Ozean. Ein Sonnensturm hat das
