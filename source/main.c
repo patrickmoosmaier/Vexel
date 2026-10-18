@@ -57,7 +57,10 @@ void play_title(void)
             draw_text_big(fb, 128 - text_width("NEO-KYRA 2187") , 14, "NEO-KYRA 2187", C_CYAN, RGB(2, 2, 8), 2);
             button(fb, 48, 56, 160, 34, "NEUES SPIEL", C_MAGENTA, cur == 0);
             button(fb, 48, 98, 160, 34, has_save ? "FORTSETZEN" : "(kein Spielstand)", has_save ? C_CYAN : C_GREY, cur == 1);
-            draw_text(fb, 128 - text_width("1669 Vexel. 24 Arenen. 8 Urcodes.") / 2, 150, "1463 Vexel. 24 Arenen. 8 Urcodes.", C_TEXT2);
+            char info[64];
+            fmt(info, "%d Vexel. %d Arenen. %d Urcodes.", NUM_SPECIES, NUM_GYMS, NUM_LEGENDS);   // always matches the game data
+            draw_text(fb, 128 - text_width(info) / 2, 150, info, C_TEXT2);
+            draw_text(fb, 250 - text_width("v" VEXEL_VERSION), 182, "v" VEXEL_VERSION, RGB(12, 14, 20));
             draw_text(fb, 128 - text_width("Ein unabhängiges Homebrew-Spiel") / 2, 172, "Ein unabhängiges Homebrew-Spiel", RGB(10, 12, 18));
             bot_dirty = 1;
         }
@@ -140,9 +143,14 @@ void play_ending(void)
     static const char *const credits[] = {
         "VEXEL – PROTOKOLL NULL", "", "Die Vexel sind frei.", "Helix Dynamics wurde aufgelöst.", "Kai Kade baut die Stadt neu auf.",
         "Lyra Voss forscht wieder – diesmal mit dir.", "", "~ ENDE ~", "", "Danke fürs Spielen!", "", "Aber das Abenteuer geht weiter:",
-        "Im Datenabgrund warten die stärksten Vexel.", "Und als Champion beginnt die Jagd nach den Urcodes...", "Kannst du alle 1669 fangen?", "",
+        "Im Datenabgrund warten die stärksten Vexel.", "Und als Champion beginnt die Jagd nach den Urcodes...", "", "",
     };
     int n = sizeof(credits) / sizeof(credits[0]);
+    static char catch_line[48];
+    fmt(catch_line, "Kannst du alle %d fangen?", NUM_SPECIES);
+    const char *line_at[32];
+    for (int i = 0; i < n && i < 32; i++) line_at[i] = credits[i];
+    line_at[n - 2] = catch_line;
     for (int t = 0; t < 1100; t++) {
         draw_battle_bg(fb_top, 0x80, t);
         int sp = (t / 40) % NUM_SPECIES;
@@ -154,7 +162,7 @@ void play_ending(void)
             for (int i = 0; i < n; i++) {
                 int y = 200 + i * 18 - t / 3;
                 if (y < -10 || y > 192) continue;
-                draw_text_sh(fb_bot, 128 - text_width(credits[i]) / 2, y, credits[i], i == 0 ? C_YELLOW : C_TEXT, C_BLACK);
+                draw_text_sh(fb_bot, 128 - text_width(line_at[i]) / 2, y, line_at[i], i == 0 ? C_YELLOW : C_TEXT, C_BLACK);
             }
             bot_dirty = 1;
         }

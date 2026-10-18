@@ -1,4 +1,4 @@
-## VEXEL – Protokoll Null v7.0
+## VEXEL – Protokoll Null v7.1
 
 Ein eigenständiges Monster-Sammel-RPG für DS-Emulatoren (getestet mit melonDS, läuft in Delta auf iPhone/iPad).
 
@@ -16,6 +16,12 @@ Ein eigenständiges Monster-Sammel-RPG für DS-Emulatoren (getestet mit melonDS,
 - **591 Attacken**, 77 Fähigkeiten, 20 Typen, 4 Wetterlagen, 16 tragbare Items
 - **24 Arenen** in freier Reihenfolge, Hoher Rat, Champion-Storyline mit wiederkehrenden Herausforderern
 - Tag/Nacht nach der DS-Uhr, Partner-Vexel folgt dir, Hoverboard, Angeln, Schnellreise, Pension mit Eiern
+
+### Neu in v7.1
+- Versionsnummer unten rechts auf dem Titelbildschirm
+- Alle Zahlen im Spiel (Titelbildschirm, Abspann) werden jetzt automatisch aus den Spieldaten berechnet
+
+**Tipp für Delta:** Wenn nach dem Update noch die alte Version startet, das alte Spiel in Delta löschen (lange drücken → Löschen) und `VEXEL.nds` neu importieren. Spielstände vorher in Delta exportieren oder im Spiel speichern – alte Spielstände werden übernommen.
 
 ### Neu in v7.0
 - **Vexikon als Nachschlagewerk:** alle normalen Vexel sofort einsehbar – Werte, Fähigkeit, Entwicklung, Fundorte, Attacken, Typfilter (Y). Legendäre und mystische bleiben verborgen, bis man sie trifft

@@ -8,7 +8,8 @@ ROM      := $(NAME).nds
 ARM7ELF  := $(BLOCKSDS)/sys/arm7/main_core/arm7_maxmod.elf
 SPECS    := $(BLOCKSDS)/sys/crts/ds_arm9.specs
 ARCH     := -mthumb -mcpu=arm946e-s+nofp
-DEFINES  := -D__NDS__ -D__BLOCKSDS__ -DARM9
+VERSION  := $(shell cat VERSION)
+DEFINES  := -D__NDS__ -D__BLOCKSDS__ -DARM9 -DVEXEL_VERSION=\"$(VERSION)\"
 CFLAGS   := -Wall -Wno-unused-function -O2 $(ARCH) -ffunction-sections -fdata-sections $(DEFINES) \
             -I$(BLOCKSDS)/libs/libnds/include -specs=$(SPECS)
 LDFLAGS  := $(ARCH) -L$(BLOCKSDS)/libs/libnds/lib -Wl,--gc-sections -Wl,-Map,build/$(NAME).map \
@@ -18,7 +19,7 @@ OBJ      := $(patsubst source/%.c,build/nds/%.o,$(SRC))
 
 all: $(ROM)
 
-build/nds/%.o: source/%.c $(wildcard source/*.h)
+build/nds/%.o: source/%.c $(wildcard source/*.h) VERSION
 	@mkdir -p build/nds
 	$(CC) $(CFLAGS) -c -o $@ $<
 
@@ -31,7 +32,7 @@ build/$(NAME).elf: $(OBJ)
 
 $(ROM): build/$(NAME).elf icon.bmp
 	$(BLOCKSDS)/tools/ndstool/ndstool -c $@ -7 $(ARM7ELF) -9 build/$(NAME).elf \
-		-b icon.bmp "VEXEL;Protokoll Null;Neo-Kyra 2187" -g VXLD 01 "VEXEL" 0
+		-b icon.bmp "VEXEL v$(VERSION);Protokoll Null;Neo-Kyra 2187" -g VXLD 01 "VEXEL" 0
 
 assets:
 	python3 tools/gen_gfx.py source/gen_gfx.c

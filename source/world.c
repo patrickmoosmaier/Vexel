@@ -291,7 +291,7 @@ static const char *const house_texts[] = {
     "Mein Sohn arbeitet für Helix. Er kommt nie nach Hause. Er sagt, OMEGA braucht ihn rund um die Uhr.",
     "Wusstest du, dass Vexel träumen? Mein kleines Byte zuckt im Schlaf, als würde es Daten verarbeiten.",
     "Früher gab es Bäume aus Holz. Heute wachsen nur noch Bio-Vexel auf den Dächern. Auch schön, irgendwie.",
-    "Hast du schon alle 1669 Vexel gesehen? Mein Opa sagt, die letzten leben im Datenabgrund.",
+    "Hast du schon alle Vexel gesehen? Mein Opa sagt, die letzten leben im Datenabgrund.",
     "Ich repariere alte Kampfroboter. Die Vexel des Metall-Typs lieben es, in meiner Werkstatt zu schlafen.",
     "Lyra Voss? Die hat mir mal mein Haustier-Vexel gerettet. Eine gute Frau.",
     "Schhh! Mein Psi-Vexel meditiert. Wenn es aufwacht, schweben hier wieder alle Möbel.",
@@ -1877,7 +1877,7 @@ static void script_lab(Npc *self)
         heal_party();
         sfx(SFX_LEVEL);
         say(NULL, "Du hast das VEXIKON, 5 Datenkapseln und 3 Reparaturkits erhalten!");
-        say("Dr. Brandt", "Das Vexikon katalogisiert alle 1669 bekannten Vexel. Mit Datenkapseln fängst du wilde Vexel im leuchtenden Datengras.|Der Kabelpfad nördlich vom Rost-Sektor führt zum Neon-Distrikt. Viel Glück!");
+        say("Dr. Brandt", "Das Vexikon katalogisiert alle bekannten Vexel. Mit Datenkapseln fängst du wilde Vexel im leuchtenden Datengras.|Der Kabelpfad nördlich vom Rost-Sektor führt zum Neon-Distrikt. Viel Glück!");
         bottom_need = 1;
         (void)self;
         return;
@@ -1928,7 +1928,7 @@ static void script_core(void)
         redraw();
         become_champion();
         save_game();
-        say(NULL, "Spiel automatisch gespeichert. Danke fürs Spielen!|Der Datenabgrund wurde freigeschaltet (Warp links im Kern). Fang alle 1669 Vexel!");
+        say(NULL, "Spiel automatisch gespeichert. Danke fürs Spielen!|Der Datenabgrund wurde freigeschaltet (Warp links im Kern). Fang alle Vexel!");
         return;
     }
 }
