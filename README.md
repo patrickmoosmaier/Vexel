@@ -66,7 +66,7 @@ Spielstände aus der vorherigen Version werden übernommen. Wer das Spiel dort s
     Dafür gibt es Credits und alle 5 Verteidigungen eine Omegakapsel. Dazu kommen eine Rangliste und eine eigene Ladestation.
 - 37 Karten: 12 Städte, 13 Routen, Höhle, Wüste, Helix-Turm mit Liga, Orbitalgarten, OMEGA-Kern, Datenabgrund, Aetherberg und Champion-Halle.
 - 72 Trainer, Ladestationen, Händler-Bot, Cloud-Speicher (120 Plätze), Vexikon mit Stufe, Attribut, Fähigkeit und Evolutionslinie.
-- **Klassiker aus den Game-Boy-, GBA- und DS-Teilen:**
+- **weitere features:**
   - **Schillernde Vexel** (1 zu 512) in seltenen Farben, mit Funkeln im Kampf und Stern in Status und Kampfanzeige.
   - **16 Wesen** (Naturen), die je einen Wert um 10 % heben und einen senken (Status-Seite).
   - **Tag und Nacht** nach der DS-Uhr: Morgen, Tag, Abend und Nacht färben die Oberwelt. Nachts leuchten die Neonlichter weiter,
