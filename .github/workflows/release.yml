@@ -1,0 +1,18 @@
+# Publishes VEXEL.nds as a GitHub release whenever a version tag (v*) is pushed.
+name: Release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: VEXEL ${{ github.ref_name }}
+          body_path: RELEASE_NOTES.md
+          files: VEXEL.nds
+          make_latest: true
